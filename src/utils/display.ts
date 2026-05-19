@@ -46,9 +46,7 @@ export function printForecastOutput(
 
   console.log('\n Ensemble — Temperatura Máxima do Dia');
   console.log('─────────────────────────────────────────────────────');
-  console.log(
-    ` Máx. prevista:  ${ensemble.maxMean}°C   |   Spread (σ): ±${ensemble.maxSpread}°C`,
-  );
+  console.log(` Máx. prevista:  ${ensemble.maxMean}°C   |   Spread (σ): ±${ensemble.maxSpread}°C`);
   if (ensemble.minMean !== null) {
     console.log(` Mín. prevista:  ${ensemble.minMean}°C`);
   }

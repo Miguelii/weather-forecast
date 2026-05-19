@@ -29,10 +29,9 @@ export function registerForecastCommand(cli: Command): void {
       runOrExit(
         Effect.gen(function* () {
           // Load bias store once — avoids 4 separate file reads (one per model)
-          const [location, biasStore] = yield* Effect.all(
-            [resolveCity(opts.city), loadBias()],
-            { concurrency: 2 },
-          );
+          const [location, biasStore] = yield* Effect.all([resolveCity(opts.city), loadBias()], {
+            concurrency: 2,
+          });
           process.stdout.write(
             `\nLocation: ${location.name}, ${location.country} (${location.lat}, ${location.lon})\n`,
           );
