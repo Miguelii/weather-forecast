@@ -16,6 +16,7 @@ The goal is to identify mispricings in Polymarket weather prediction markets.
 - **Language:** TypeScript (ESM, `NodeNext` module resolution)
 - **Package manager:** pnpm
 - **Build:** `tsc` → compiles `src/` to `dist/`
+- **Effect:** `effect` library for typed errors, async I/O, and concurrency
 - **Linter:** ESLint with `airbnb-base` + `@typescript-eslint`
 - **Formatter:** Prettier
 
@@ -25,19 +26,25 @@ The goal is to identify mispricings in Polymarket weather prediction markets.
 
 ```
 src/
-├── index.ts                  # CLI entry point (commander) — forecast + bias commands
-├── types.ts                  # All shared interfaces and types
+├── index.ts                  # CLI entry point — registers commands and calls cli.parse()
+├── types.ts                  # All shared interfaces, types, and typed error classes
+├── commands/
+│   ├── forecast.ts           # forecast command action
+│   └── bias.ts               # bias set/list command actions
 ├── bias/
-│   ├── store.ts              # Async read/write of data/bias.json
-│   └── apply.ts              # Applies bias correction to a raw forecast
+│   ├── store.ts              # Async read/write of data/bias.json (Effect)
+│   └── apply.ts              # Applies bias correction to a raw forecast (pure)
 ├── fetchers/
-│   └── openMeteo.ts          # Fetches from all 4 models via Open-Meteo API
+│   └── openMeteo.ts          # Fetches from all models via Open-Meteo API (Effect)
 ├── utils/
 │   ├── constants.ts          # All project-wide constants (URLs, timeouts, models, paths)
-│   ├── geocoding.ts          # City name → lat/lon via Open-Meteo geocoding API
-│   └── stats.ts              # Pure math: mean, stddev, percentile, normalCDF
+│   ├── display.ts            # Terminal output — tables and formatted results
+│   ├── geocoding.ts          # City name → lat/lon via Open-Meteo geocoding API (Effect)
+│   ├── runOrExit.ts          # Runs an Effect and exits process on failure
+│   ├── stats.ts              # Pure math: mean, stddev, percentile, normalCDF
+│   └── validateDate.ts       # CLI date validation with warnings
 └── voting/
-    └── voting-system.ts      # Ensemble voting: aggregates models into probability output
+    └── voting-system.ts      # Ensemble voting: aggregates models into probability output (Effect)
 
 data/
 └── bias.json                 # Persisted bias corrections — DO NOT commit with real values
@@ -60,9 +67,9 @@ All data comes from **Open-Meteo** (free, no API key required):
 | Model ID | Open-Meteo param | Provider | Resolution |
 |----------|-----------------|----------|------------|
 | `ifs`    | `ecmwf_ifs025`  | ECMWF    | 25 km, 15-day |
-| `aifs`   | `ecmwf_aifs025` | ECMWF AI | 25 km, 15-day |
 | `gfs`    | `gfs_seamless`  | NOAA     | 50 km, 16-day |
 | `icon`   | `icon_seamless` | DWD      | 2–11 km, 7–15 day |
+| `gem`    | `gem_global`    | ECCC     | ~25 km, 16-day |
 
 ---
 
@@ -106,8 +113,9 @@ pnpm run fmt:check    # Prettier check (useful in CI)
 - Probabilities use `normalCDF`: `P(max > X) = 1 − normalCDF(X, ensembleMean, ensembleSpread)`
 
 ### HTTP Reliability
-- All `fetch` calls use `AbortController` with a 10-second timeout (`FETCH_TIMEOUT_MS`)
-- `fetchAllModels` uses `Promise.allSettled` — one failing model never blocks the others
+- All `fetch` calls use Effect's built-in `AbortSignal` (via `Effect.tryPromise`) and `Effect.timeout('10 seconds')`
+- `fetchAllModels` uses `Effect.forEach` with `Effect.either` — one failing model never blocks the others
+- If a model returns HTTP 200 but all-null data, `fetchModel` fails with a descriptive `FetchError` so the warning is always visible
 
 ---
 
@@ -130,18 +138,20 @@ pnpm run fmt:check    # Prettier check (useful in CI)
 - No commented-out code — delete it
 
 ### Async & I/O
-- Never use synchronous I/O (`readFileSync`, `writeFileSync`) — always use `fs/promises`
+- Never use synchronous I/O (`readFileSync`, `writeFileSync`) — always use `fs/promises` wrapped in `Effect.tryPromise`
 - Never use `Math.max(...largeArray)` spread — use `.reduce()` to avoid stack overflow
-- Parallel independent async operations must use `Promise.all` or `Promise.allSettled`
+- Parallel independent async operations must use `Effect.all` with `{ concurrency: N }` or `Effect.forEach` with `{ concurrency: 'unbounded' }`
+- Never use raw `Promise`, `async/await`, or `try/catch` for I/O — wrap everything in Effect
 
 ### Constants
 - All magic strings and numbers go in `src/utils/constants.ts`
 - No hardcoded URLs, timeouts, or file paths anywhere else in the codebase
 
 ### Error Handling
-- Always narrow error types: `err instanceof Error ? err.message : String(err)`
-- Throw descriptive errors with context (which model failed, which city, etc.)
-- CLI catches all errors at the top level in `index.ts` and exits with code 1
+- All errors are typed — defined as `Data.TaggedError` classes in `src/types.ts`
+- Never `throw` inside Effect code — use `return yield* new MyError({ cause: '...' })`
+- Always narrow unknown errors: `err instanceof Error ? err.message : String(err)`
+- The CLI runner (`src/utils/runOrExit.ts`) uses `Effect.runPromiseExit` + `Cause.squash` to extract the typed error message and exit with code 1
 
 ### Code Style (enforced by ESLint + Prettier)
 - Single quotes for strings
@@ -150,6 +160,107 @@ pnpm run fmt:check    # Prettier check (useful in CI)
 - No nested ternaries (`no-nested-ternary`)
 - No parameter reassignment (`no-param-reassign`) — use a local variable instead
 - No `__` prefixed variables (`no-underscore-dangle`) — use descriptive names
+
+---
+
+## Effect-TS Patterns
+
+The entire I/O layer uses [Effect](https://effect.website). **All new functions that do I/O, HTTP, or file operations must follow these patterns.**
+
+### Typed errors
+
+All error types live in `src/types.ts` and extend `Data.TaggedError`:
+
+```typescript
+export class GeocodingError extends Data.TaggedError('GeocodingError')<{ cause: string }> {
+  get message(): string { return this.cause; }
+}
+```
+
+Add a `get message()` getter so the error prints correctly when it escapes to the CLI runner.
+
+### Async functions (HTTP / file I/O)
+
+Use `Effect.fn` for named functions — it enables automatic tracing and better stack traces:
+
+```typescript
+export const myFn = Effect.fn('myFn')(function* (arg: string) {
+  const res = yield* Effect.tryPromise({
+    try: (signal) => fetch(url, { signal }),   // signal = AbortSignal, injected automatically
+    catch: (err) => new MyError({ cause: String(err) }),
+  }).pipe(
+    Effect.timeout('10 seconds'),
+    Effect.catchTag('TimeoutException', () =>
+      Effect.fail(new MyError({ cause: 'Request timed out' })),
+    ),
+  );
+
+  if (!res.ok) {
+    return yield* new MyError({ cause: `HTTP ${res.status}` });
+  }
+
+  const data = yield* Effect.tryPromise({
+    try: () => res.json() as Promise<MyResponse>,
+    catch: (err) => new MyError({ cause: String(err) }),
+  });
+
+  return data;
+});
+```
+
+### Failing explicitly
+
+Use `return yield*` to terminate the generator with a typed failure:
+
+```typescript
+if (condition) {
+  return yield* new MyError({ cause: 'reason' });
+}
+```
+
+Never use `throw` inside an `Effect.gen` generator.
+
+### Wrapping pure throwing code
+
+When calling legacy code that may `throw`, use `Effect.try`:
+
+```typescript
+export const safeCompute = (input: number[]): Effect.Effect<Result, ComputeError> =>
+  Effect.try({
+    try: () => pureFunctionThatThrows(input),
+    catch: (err) => new ComputeError({ cause: err instanceof Error ? err.message : String(err) }),
+  });
+```
+
+### Running in parallel
+
+```typescript
+// Two effects in parallel, both must succeed:
+const [a, b] = yield* Effect.all([effectA, effectB], { concurrency: 2 });
+
+// N effects in parallel, collect all results regardless of failure:
+const results = yield* Effect.forEach(items, (item) => Effect.either(myEffect(item)), {
+  concurrency: 'unbounded',
+});
+// results is Either<Error, Value>[] — check r._tag === 'Right' / 'Left'
+```
+
+### CLI entry point
+
+Command actions must never be `async`. Use `runOrExit` from `src/utils/runOrExit.ts`:
+
+```typescript
+.action((opts) => {
+  runOrExit(
+    Effect.gen(function* () {
+      const result = yield* myEffect(opts.value);
+      console.log(result);
+    }),
+  );
+});
+```
+
+`runOrExit` handles `Effect.runPromiseExit`, extracts the error message via `Cause.squash`, and exits with code 1 on failure.
 
 ---
 

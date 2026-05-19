@@ -44,32 +44,36 @@ export function printForecastOutput(
   }
   console.log(modelTable.toString());
 
-  console.log('\n Ensemble — Temperatura Máxima do Dia');
+  console.log('\n Ensemble — Daily Max Temperature');
   console.log('─────────────────────────────────────────────────────');
-  console.log(` Máx. prevista:  ${ensemble.maxMean}°C   |   Spread (σ): ±${ensemble.maxSpread}°C`);
+  console.log(` Forecast max:  ${ensemble.maxMean}°C   |   Spread (σ): ±${ensemble.maxSpread}°C`);
   if (ensemble.minMean !== null) {
-    console.log(` Mín. prevista:  ${ensemble.minMean}°C`);
+    console.log(` Forecast min:  ${ensemble.minMean}°C`);
   }
   console.log(
-    ` Models used: ${ensemble.modelsUsed}/4${ensemble.modelsFailed ? `  (${ensemble.modelsFailed} failed)` : ''}`,
+    ` Models used: ${ensemble.modelsUsed}/${ensemble.modelsUsed + ensemble.modelsFailed}${ensemble.modelsFailed ? `  (${ensemble.modelsFailed} failed)` : ''}`,
   );
 
   const { p10, p25, p50, p75, p90 } = ensemble.maxPercentiles;
   const pctTable = new Table({
-    head: ['P10', 'P25', 'P50 (mediana)', 'P75', 'P90'],
+    head: ['P10', 'P25', 'P50 (median)', 'P75', 'P90'],
     colAligns: ['right', 'right', 'right', 'right', 'right'],
     style: { head: ['cyan'] },
   });
   pctTable.push([`${p10}°C`, `${p25}°C`, `${p50}°C`, `${p75}°C`, `${p90}°C`]);
-  console.log('\n Percentagem da temperatura máxima');
+  console.log('\n Max temperature percentiles');
   console.log(pctTable.toString());
 
+  console.log(' P10 = cold scenario (90% chance of being warmer)');
+  console.log(' P50 = median');
+  console.log(' P90 = warm scenario (10% chance of being warmer)');
+
   if (ensemble.probabilities.length) {
-    console.log('\n Probabilidades — P(temp máx > X)');
+    console.log('\n Probabilities — P(max temp > X)');
     console.log('─────────────────────────────────────────────────────');
     for (const { threshold, probAbove } of ensemble.probabilities) {
       const bar = '█'.repeat(Math.round(probAbove / 5)).padEnd(20, '░');
-      console.log(`  P(máx > ${threshold}°C):  ${bar} ${probAbove}%`);
+      console.log(`  P(max > ${threshold}°C):  ${bar} ${probAbove}%`);
     }
   }
 

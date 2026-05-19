@@ -35,7 +35,7 @@ export function registerForecastCommand(cli: Command): void {
           process.stdout.write(
             `\nLocation: ${location.name}, ${location.country} (${location.lat}, ${location.lon})\n`,
           );
-          process.stdout.write('Fetching forecasts from IFS, AIFS, GFS, ICON...\n');
+          process.stdout.write('Fetching forecasts from IFS, GFS, ICON...\n');
 
           const raw = yield* fetchAllModels(location.lat, location.lon, opts.date);
           const corrected = raw.map((f) => correctForecast(f, location.name, biasStore));

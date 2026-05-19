@@ -10,9 +10,10 @@ export const GEO_URL = 'https://geocoding-api.open-meteo.com/v1/search';
 // ─── Models ───────────────────────────────────────────────────────────────────
 export const MODELS: ModelDef[] = [
   { id: 'ifs', param: 'ecmwf_ifs025' },
-  { id: 'aifs', param: 'ecmwf_aifs025' },
+  /* { id: 'aifs', param: 'ecmwf_aifs025' }, */
   { id: 'gfs', param: 'gfs_seamless' },
   { id: 'icon', param: 'icon_seamless' },
+  { id: 'gem', param: 'gem_global' },
 ];
 
 // ─── Storage ──────────────────────────────────────────────────────────────────

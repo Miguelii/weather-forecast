@@ -7,7 +7,7 @@ export interface Location {
   country: string;
 }
 
-export type ModelId = 'ifs' | 'aifs' | 'gfs' | 'icon';
+export type ModelId = 'ifs' | 'gfs' | 'icon' | 'gem';
 
 export interface ModelDef {
   id: ModelId;

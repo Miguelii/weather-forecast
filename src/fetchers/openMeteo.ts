@@ -67,6 +67,17 @@ export const fetchModel = Effect.fn('fetchModel')(function* (
     tempMin = Math.round(hourly.reduce((a, b) => Math.min(a, b), Infinity) * 10) / 10;
   }
 
+  // No data at all after fallback — treat as a model failure so the warning
+  // machinery in fetchAllModels logs the reason instead of silently showing n/a.
+  if (tempMax === null) {
+    const hourlyCount = (data.hourly?.temperature_2m ?? []).length;
+    const rawDailyMax = data.daily?.temperature_2m_max?.[0] ?? null;
+    return yield* new FetchError({
+      model: modelDef.id,
+      cause: `no temperature data (daily_max=${rawDailyMax}, hourly_values=${hourlyCount}) — upstream data gap`,
+    });
+  }
+
   const tempMean =
     tempMax !== null && tempMin !== null ? Math.round(((tempMax + tempMin) / 2) * 10) / 10 : null;
 
