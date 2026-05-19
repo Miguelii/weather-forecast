@@ -1,7 +1,7 @@
 import { Effect } from 'effect';
-import type { Location } from '../types.js';
-import { GeocodingError } from '../types.js';
-import { GEO_URL } from './constants.js';
+import type { Location } from '#types.js';
+import { GeocodingError } from '#types.js';
+import { GEO_URL } from '#utils/constants.js';
 
 interface GeoResult {
   latitude: number;

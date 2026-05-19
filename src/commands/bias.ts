@@ -1,9 +1,9 @@
 import type { Command } from 'commander';
 import { Effect } from 'effect';
-import { loadBias, setBias } from '../bias/store.js';
-import type { ModelId } from '../types.js';
-import { printBiasTable } from '../utils/display.js';
-import { runOrExit } from '../utils/runOrExit.js';
+import { loadBias, setBias } from '#bias/store.js';
+import type { ModelId } from '#types.js';
+import { printBiasTable } from '#utils/display.js';
+import { runOrExit } from '#utils/runOrExit.js';
 
 const VALID_MODELS: ModelId[] = ['ifs', 'gfs', 'icon', 'gem'];
 

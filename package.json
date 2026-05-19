@@ -16,6 +16,32 @@
   "author": "",
   "license": "ISC",
   "type": "module",
+  "imports": {
+    "#types.js": {
+      "types": "./src/types.ts",
+      "default": "./dist/types.js"
+    },
+    "#utils/*.js": {
+      "types": "./src/utils/*.ts",
+      "default": "./dist/utils/*.js"
+    },
+    "#fetchers/*.js": {
+      "types": "./src/fetchers/*.ts",
+      "default": "./dist/fetchers/*.js"
+    },
+    "#bias/*.js": {
+      "types": "./src/bias/*.ts",
+      "default": "./dist/bias/*.js"
+    },
+    "#voting/*.js": {
+      "types": "./src/voting/*.ts",
+      "default": "./dist/voting/*.js"
+    },
+    "#commands/*.js": {
+      "types": "./src/commands/*.ts",
+      "default": "./dist/commands/*.js"
+    }
+  },
   "dependencies": {
     "cli-table3": "^0.6.5",
     "commander": "^14.0.3",

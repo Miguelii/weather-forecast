@@ -1,5 +1,5 @@
 import Table from 'cli-table3';
-import type { BiasStore, CorrectedForecast, EnsembleResult, Location } from '../types.js';
+import type { BiasStore, CorrectedForecast, EnsembleResult, Location } from '#types.js';
 
 const fmt = (v: number | null): string => (v !== null ? `${v}°C` : 'n/a');
 

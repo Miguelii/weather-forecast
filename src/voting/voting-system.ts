@@ -1,7 +1,7 @@
 import { Effect } from 'effect';
-import { mean, stddev, percentile, normalCDF } from '../utils/stats.js';
-import type { CorrectedForecast, EnsembleResult } from '../types.js';
-import { EnsembleError } from '../types.js';
+import { mean, stddev, percentile, normalCDF } from '#utils/stats.js';
+import type { CorrectedForecast, EnsembleResult } from '#types.js';
+import { EnsembleError } from '#types.js';
 
 function runVotingSystemPure(
   correctedForecasts: CorrectedForecast[],

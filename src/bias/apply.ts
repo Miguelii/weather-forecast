@@ -1,5 +1,5 @@
-import { getBiasValue } from './store.js';
-import type { BiasStore, RawForecast, CorrectedForecast } from '../types.js';
+import { getBiasValue } from '#bias/store.js';
+import type { BiasStore, RawForecast, CorrectedForecast } from '#types.js';
 
 export function correctForecast(
   forecast: RawForecast,

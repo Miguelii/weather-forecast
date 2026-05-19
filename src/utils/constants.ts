@@ -1,6 +1,6 @@
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { ModelDef } from '../types.js';
+import type { ModelDef } from '#types.js';
 
 // ─── HTTP ─────────────────────────────────────────────────────────────────────
 export const FETCH_TIMEOUT_MS = 10_000;

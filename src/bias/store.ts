@@ -1,8 +1,8 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { Effect } from 'effect';
-import type { BiasStore, ModelId } from '../types.js';
-import { BiasStoreError } from '../types.js';
-import { BIAS_PATH } from '../utils/constants.js';
+import type { BiasStore, ModelId } from '#types.js';
+import { BiasStoreError } from '#types.js';
+import { BIAS_PATH } from '#utils/constants.js';
 
 export const loadBias = Effect.fn('loadBias')(function* () {
   const result = yield* Effect.either(

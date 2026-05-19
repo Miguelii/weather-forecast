@@ -1,7 +1,7 @@
 import { Effect } from 'effect';
-import type { ModelDef, ModelId, RawForecast } from '../types.js';
-import { FetchError } from '../types.js';
-import { FORECAST_URL, MODELS } from '../utils/constants.js';
+import type { ModelDef, ModelId, RawForecast } from '#types.js';
+import { FetchError } from '#types.js';
+import { FORECAST_URL, MODELS } from '#utils/constants.js';
 
 interface OpenMeteoResponse {
   hourly?: { temperature_2m?: (number | null)[] };

@@ -1,13 +1,13 @@
 import type { Command } from 'commander';
 import { Effect } from 'effect';
-import { resolveCity } from '../utils/geocoding.js';
-import { fetchAllModels } from '../fetchers/openMeteo.js';
-import { correctForecast } from '../bias/apply.js';
-import { loadBias } from '../bias/store.js';
-import { runVotingSystem } from '../voting/voting-system.js';
-import { validateDate } from '../utils/validateDate.js';
-import { printForecastOutput } from '../utils/display.js';
-import { runOrExit } from '../utils/runOrExit.js';
+import { resolveCity } from '#utils/geocoding.js';
+import { fetchAllModels } from '#fetchers/openMeteo.js';
+import { correctForecast } from '#bias/apply.js';
+import { loadBias } from '#bias/store.js';
+import { runVotingSystem } from '#voting/voting-system.js';
+import { validateDate } from '#utils/validateDate.js';
+import { printForecastOutput } from '#utils/display.js';
+import { runOrExit } from '#utils/runOrExit.js';
 
 export function registerForecastCommand(cli: Command): void {
   cli
