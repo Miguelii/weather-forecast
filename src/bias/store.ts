@@ -1,27 +1,43 @@
 import { readFile, writeFile } from 'node:fs/promises';
+import { Effect } from 'effect';
 import type { BiasStore, ModelId } from '../types.js';
+import { BiasStoreError } from '../types.js';
 import { BIAS_PATH } from '../utils/constants.js';
 
-export async function loadBias(): Promise<BiasStore> {
-  try {
-    const raw = await readFile(BIAS_PATH, 'utf8');
-    return JSON.parse(raw) as BiasStore;
-  } catch {
-    return {};
-  }
-}
+export const loadBias = Effect.fn('loadBias')(function* () {
+  const result = yield* Effect.either(
+    Effect.tryPromise({
+      try: () => readFile(BIAS_PATH, 'utf8'),
+      catch: (err) => new BiasStoreError({ cause: String(err) }),
+    }),
+  );
 
-async function saveBias(data: BiasStore): Promise<void> {
-  await writeFile(BIAS_PATH, JSON.stringify(data, null, 2));
-}
+  // File missing or unreadable → start with an empty store
+  if (result._tag === 'Left') return {} as BiasStore;
+
+  return yield* Effect.try({
+    try: () => JSON.parse(result.right) as BiasStore,
+    catch: (err) => new BiasStoreError({ cause: `Failed to parse bias.json: ${String(err)}` }),
+  });
+});
+
+const saveBias = (data: BiasStore): Effect.Effect<void, BiasStoreError> =>
+  Effect.tryPromise({
+    try: () => writeFile(BIAS_PATH, JSON.stringify(data, null, 2)),
+    catch: (err) => new BiasStoreError({ cause: String(err) }),
+  });
 
 export function getBiasValue(store: BiasStore, city: string, model: ModelId): number {
   return store[city]?.[model] ?? 0;
 }
 
-export async function setBias(city: string, model: ModelId, value: number): Promise<void> {
-  const data = await loadBias();
+export const setBias = Effect.fn('setBias')(function* (
+  city: string,
+  model: ModelId,
+  value: number,
+) {
+  const data = yield* loadBias();
   if (!data[city]) data[city] = {};
   data[city][model] = value;
-  await saveBias(data);
-}
+  yield* saveBias(data);
+});

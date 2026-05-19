@@ -1,9 +1,11 @@
+import { Effect } from 'effect';
 import { mean, stddev, percentile, normalCDF } from '../utils/stats.js';
 import type { CorrectedForecast, EnsembleResult } from '../types.js';
+import { EnsembleError } from '../types.js';
 
-export function runVotingSystem(
+function runVotingSystemPure(
   correctedForecasts: CorrectedForecast[],
-  thresholds: number[] = [],
+  thresholds: number[],
 ): EnsembleResult {
   const valid = correctedForecasts.filter((f) => f.tempMax !== null && !f.error);
 
@@ -44,3 +46,12 @@ export function runVotingSystem(
     modelsFailed: correctedForecasts.length - valid.length,
   };
 }
+
+export const runVotingSystem = (
+  correctedForecasts: CorrectedForecast[],
+  thresholds: number[] = [],
+): Effect.Effect<EnsembleResult, EnsembleError> =>
+  Effect.try({
+    try: () => runVotingSystemPure(correctedForecasts, thresholds),
+    catch: (err) => new EnsembleError({ cause: err instanceof Error ? err.message : String(err) }),
+  });

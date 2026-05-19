@@ -17,7 +17,8 @@
   "type": "module",
   "dependencies": {
     "cli-table3": "^0.6.5",
-    "commander": "^14.0.3"
+    "commander": "^14.0.3",
+    "effect": "^3.21.2"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.5",

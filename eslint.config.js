@@ -42,6 +42,10 @@ export default [
       'no-plusplus':               'off',
       'no-await-in-loop':          'warn',
 
+      'func-names': 'off', // off because of effect-ts
+      'no-underscore-dangle': 'off', // off because of effect-ts
+      'max-classes-per-file': 'off',
+
       // Extensões obrigatórias nas importações ESM (.js)
       'import/extensions': ['error', 'ignorePackages', { js: 'always', ts: 'never' }],
       'import/prefer-default-export': 'off',

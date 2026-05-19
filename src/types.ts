@@ -1,3 +1,5 @@
+import { Data } from 'effect';
+
 export interface Location {
   lat: number;
   lon: number;
@@ -56,3 +58,32 @@ export interface EnsembleResult {
 }
 
 export type BiasStore = Record<string, Partial<Record<ModelId, number>>>;
+
+// ─── Typed errors ─────────────────────────────────────────────────────────────
+
+export class GeocodingError extends Data.TaggedError('GeocodingError')<{ cause: string }> {
+  get message(): string {
+    return this.cause;
+  }
+}
+
+export class FetchError extends Data.TaggedError('FetchError')<{
+  model: ModelId;
+  cause: string;
+}> {
+  get message(): string {
+    return `[${this.model}] ${this.cause}`;
+  }
+}
+
+export class BiasStoreError extends Data.TaggedError('BiasStoreError')<{ cause: string }> {
+  get message(): string {
+    return this.cause;
+  }
+}
+
+export class EnsembleError extends Data.TaggedError('EnsembleError')<{ cause: string }> {
+  get message(): string {
+    return this.cause;
+  }
+}

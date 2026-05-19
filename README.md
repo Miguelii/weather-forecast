@@ -8,4 +8,4 @@ distributions of the daily maximum temperature for a given city and date.
 
 pnpm build
 
-node dist/index.js forecast --city "London" --date "2026-05-16"
+node dist/index.js forecast --city "Shanghai" --date "2026-05-20"

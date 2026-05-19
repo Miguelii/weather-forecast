@@ -1,17 +1,19 @@
+import { Effect } from 'effect';
 import type { ModelDef, ModelId, RawForecast } from '../types.js';
-import { FORECAST_URL, FETCH_TIMEOUT_MS, MODELS } from '../utils/constants.js';
+import { FetchError } from '../types.js';
+import { FORECAST_URL, MODELS } from '../utils/constants.js';
 
 interface OpenMeteoResponse {
   hourly?: { temperature_2m?: (number | null)[] };
   daily?: { temperature_2m_max?: (number | null)[]; temperature_2m_min?: (number | null)[] };
 }
 
-export async function fetchModel(
+export const fetchModel = Effect.fn('fetchModel')(function* (
   lat: number,
   lon: number,
   date: string,
   modelDef: ModelDef,
-): Promise<RawForecast> {
+) {
   const params = new URLSearchParams({
     latitude: String(lat),
     longitude: String(lon),
@@ -23,25 +25,35 @@ export async function fetchModel(
     timezone: 'auto',
   });
 
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
-
-  let res: Response;
-  try {
-    res = await fetch(`${FORECAST_URL}?${params}`, { signal: controller.signal });
-  } catch (err) {
-    throw new Error(
-      `Fetch timed out or failed [${modelDef.id}]: ${err instanceof Error ? err.message : String(err)}`,
-    );
-  } finally {
-    clearTimeout(timer);
-  }
+  const res = yield* Effect.tryPromise({
+    try: (signal) => fetch(`${FORECAST_URL}?${params}`, { signal }),
+    catch: (err) =>
+      new FetchError({
+        model: modelDef.id,
+        cause: err instanceof Error ? err.message : String(err),
+      }),
+  }).pipe(
+    Effect.timeout('10 seconds'),
+    Effect.catchTag('TimeoutException', () =>
+      Effect.fail(new FetchError({ model: modelDef.id, cause: 'Request timed out' })),
+    ),
+  );
 
   if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Open-Meteo error [${modelDef.id}] ${res.status}: ${text}`);
+    const text = yield* Effect.tryPromise({
+      try: () => res.text(),
+      catch: () => new FetchError({ model: modelDef.id, cause: `HTTP ${res.status}` }),
+    });
+    return yield* new FetchError({
+      model: modelDef.id,
+      cause: `Open-Meteo ${res.status}: ${text}`,
+    });
   }
-  const data = (await res.json()) as OpenMeteoResponse;
+
+  const data = yield* Effect.tryPromise({
+    try: () => res.json() as Promise<OpenMeteoResponse>,
+    catch: (err) => new FetchError({ model: modelDef.id, cause: String(err) }),
+  });
 
   const hourly = (data.hourly?.temperature_2m ?? []).filter((v): v is number => v !== null);
 
@@ -64,29 +76,34 @@ export async function fetchModel(
     tempMax,
     tempMin,
     tempMean,
-  };
-}
+  } satisfies RawForecast;
+});
 
-export async function fetchAllModels(
+export const fetchAllModels = Effect.fn('fetchAllModels')(function* (
   lat: number,
   lon: number,
   date: string,
-): Promise<RawForecast[]> {
-  const results = await Promise.allSettled(MODELS.map((m) => fetchModel(lat, lon, date, m)));
+) {
+  const results = yield* Effect.forEach(
+    MODELS,
+    (m) => Effect.either(fetchModel(lat, lon, date, m)),
+    { concurrency: 'unbounded' },
+  );
 
   return results.map((r, i) => {
     const def = MODELS[i] as ModelDef;
-    if (r.status === 'fulfilled') return r.value;
-    console.warn(
-      `  [warn] ${def.id} failed: ${r.reason instanceof Error ? r.reason.message : String(r.reason)}`,
-    );
+
+    if (r._tag === 'Right') return r.right;
+
+    console.warn(`  [warn] ${def.id} failed: ${r.left.cause}`);
+
     return {
       model: def.id,
       date,
       tempMax: null,
       tempMin: null,
       tempMean: null,
-      error: String(r.reason),
+      error: r.left.cause,
     } satisfies RawForecast;
   });
-}
+});
