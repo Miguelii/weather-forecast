@@ -7,6 +7,7 @@ import { loadBias } from '#bias/store.js';
 import { runVotingSystem } from '#voting/voting-system.js';
 import { validateDate } from '#utils/validateDate.js';
 import { printForecastOutput } from '#utils/display.js';
+import { parsePolymarket } from '#utils/parsePolymarket.js';
 import { runOrExit } from '#utils/runOrExit.js';
 
 export function registerForecastCommand(cli: Command): void {
@@ -16,18 +17,28 @@ export function registerForecastCommand(cli: Command): void {
     .requiredOption('--city <name>', 'City name (e.g. "London")')
     .requiredOption('--date <YYYY-MM-DD>', 'Target date')
     .option('--threshold <temps>', 'Comma-separated temperature thresholds (e.g. "18,20,22")')
-    .action((opts: { city: string; date: string; threshold?: string }) => {
+    .option('--polymarket <file>', 'Path to Polymarket odds file (e.g. predicts/London-21-may.md)')
+    .action((opts: { city: string; date: string; threshold?: string; polymarket?: string }) => {
       validateDate(opts.date);
-
-      const thresholds = opts.threshold
-        ? opts.threshold
-            .split(',')
-            .map((t) => Number.parseFloat(t.trim()))
-            .filter((t) => !Number.isNaN(t))
-        : [];
 
       runOrExit(
         Effect.gen(function* () {
+          const polymarketLines = opts.polymarket
+            ? yield* parsePolymarket(opts.polymarket)
+            : undefined;
+
+          // Merge explicit thresholds with those extracted from the Polymarket file
+          const customThresholds = opts.threshold
+            ? opts.threshold
+                .split(',')
+                .map((t) => Number.parseFloat(t.trim()))
+                .filter((t) => !Number.isNaN(t))
+            : [];
+          const polyThresholds = polymarketLines ? polymarketLines.map((l) => l.threshold) : [];
+          const thresholds = [...new Set([...customThresholds, ...polyThresholds])].sort(
+            (a, b) => a - b,
+          );
+
           // Load bias store once — avoids 4 separate file reads (one per model)
           const [location, biasStore] = yield* Effect.all([resolveCity(opts.city), loadBias()], {
             concurrency: 2,
@@ -41,7 +52,7 @@ export function registerForecastCommand(cli: Command): void {
           const corrected = raw.map((f) => correctForecast(f, location.name, biasStore));
           const ensemble = yield* runVotingSystem(corrected, thresholds);
 
-          printForecastOutput(location, opts.date, corrected, ensemble);
+          printForecastOutput(location, opts.date, corrected, ensemble, polymarketLines);
         }),
       );
     });

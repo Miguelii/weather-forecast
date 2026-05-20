@@ -59,6 +59,20 @@ export interface EnsembleResult {
 
 export type BiasStore = Record<string, Partial<Record<ModelId, number>>>;
 
+export interface PolymarketLine {
+  threshold: number;
+  yesProb: number;
+  noProb: number;
+}
+
+export interface BetRecommendation {
+  threshold: number;
+  modelProb: number;
+  marketYesProb: number;
+  edge: number;
+  signal: 'YES' | 'NO' | 'SKIP';
+}
+
 // ─── Typed errors ─────────────────────────────────────────────────────────────
 
 export class GeocodingError extends Data.TaggedError('GeocodingError')<{ cause: string }> {
@@ -83,6 +97,14 @@ export class BiasStoreError extends Data.TaggedError('BiasStoreError')<{ cause: 
 }
 
 export class EnsembleError extends Data.TaggedError('EnsembleError')<{ cause: string }> {
+  get message(): string {
+    return this.cause;
+  }
+}
+
+export class PolymarketParseError extends Data.TaggedError('PolymarketParseError')<{
+  cause: string;
+}> {
   get message(): string {
     return this.cause;
   }

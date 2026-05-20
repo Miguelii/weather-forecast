@@ -1,5 +1,14 @@
 import Table from 'cli-table3';
-import type { BiasStore, CorrectedForecast, EnsembleResult, Location } from '#types.js';
+import type {
+  BetRecommendation,
+  BiasStore,
+  CorrectedForecast,
+  EnsembleResult,
+  Location,
+  PolymarketLine,
+  ProbabilityResult,
+} from '#types.js';
+import { MIN_BET_EDGE_PERCENT } from '#utils/constants.js';
 
 const fmt = (v: number | null): string => (v !== null ? `${v}°C` : 'n/a');
 
@@ -8,11 +17,78 @@ const fmtBias = (b: number): string => {
   return b > 0 ? `+${b}` : `${b}`;
 };
 
+function buildRecommendations(
+  lines: PolymarketLine[],
+  probs: ProbabilityResult[],
+): BetRecommendation[] {
+  return lines.map((line) => {
+    const match = probs.find((p) => p.threshold === line.threshold);
+    const modelProb = match ? match.probAbove : NaN;
+    const edge = Number.isNaN(modelProb) ? NaN : modelProb - line.yesProb;
+    let signal: BetRecommendation['signal'] = 'SKIP';
+    if (!Number.isNaN(edge)) {
+      if (edge >= MIN_BET_EDGE_PERCENT) signal = 'YES';
+      else if (edge <= -MIN_BET_EDGE_PERCENT) signal = 'NO';
+    }
+    return { threshold: line.threshold, modelProb, marketYesProb: line.yesProb, edge, signal };
+  });
+}
+
+function fmtEdge(edge: number): string {
+  if (Number.isNaN(edge)) return 'N/A';
+  const sign = edge >= 0 ? '+' : '';
+  return `${sign}${edge.toFixed(1)}%`;
+}
+
+function fmtSignal(signal: BetRecommendation['signal']): string {
+  if (signal === 'YES') return 'BET YES';
+  if (signal === 'NO') return 'BET NO';
+  return '—  skip';
+}
+
+function printPolymarketAnalysis(lines: PolymarketLine[], probs: ProbabilityResult[]): void {
+  const recs = buildRecommendations(lines, probs);
+
+  console.log('\n Polymarket vs. Model Analysis');
+  console.log('─────────────────────────────────────────────────────');
+
+  const table = new Table({
+    head: ['Threshold', 'Market YES', 'Model P(>)', 'Edge', 'Signal'],
+    colAligns: ['right', 'right', 'right', 'right', 'left'],
+    style: { head: ['cyan'] },
+  });
+
+  for (const r of recs) {
+    table.push([
+      `${r.threshold}°C`,
+      `${r.marketYesProb.toFixed(1)}%`,
+      Number.isNaN(r.modelProb) ? 'N/A' : `${r.modelProb.toFixed(1)}%`,
+      fmtEdge(r.edge),
+      fmtSignal(r.signal),
+    ]);
+  }
+  console.log(table.toString());
+
+  const best = recs
+    .filter((r) => r.signal !== 'SKIP' && !Number.isNaN(r.edge))
+    .sort((a, b) => Math.abs(b.edge) - Math.abs(a.edge))[0];
+
+  if (best) {
+    console.log(
+      ` Best opportunity: BET ${best.signal} on P(max > ${best.threshold}°C)  [edge: ${fmtEdge(best.edge)}]`,
+    );
+  } else {
+    console.log(' No clear edge — market prices appear aligned with the model.');
+  }
+  console.log('\n');
+}
+
 export function printForecastOutput(
   location: Location,
   date: string,
   corrected: CorrectedForecast[],
   ensemble: EnsembleResult,
+  polymarketLines?: PolymarketLine[],
 ): void {
   console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   console.log(' Weather Ensemble Forecast');
@@ -77,7 +153,11 @@ export function printForecastOutput(
     }
   }
 
-  console.log('\n');
+  if (polymarketLines?.length) {
+    printPolymarketAnalysis(polymarketLines, ensemble.probabilities);
+  } else {
+    console.log('\n');
+  }
 }
 
 export function printBiasTable(data: BiasStore): void {
