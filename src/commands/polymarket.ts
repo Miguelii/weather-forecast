@@ -41,6 +41,7 @@ export function registerPolymarketCommand(cli: Command): void {
           });
 
           const slug = parsed.pathname.split('/').filter(Boolean).at(-1);
+
           if (!slug) {
             yield* new PolymarketFetchError({
               cause: `Cannot extract event slug from URL: "${opts.url}"`,
@@ -48,7 +49,8 @@ export function registerPolymarketCommand(cli: Command): void {
           }
 
           process.stdout.write(`Fetching Polymarket event: ${slug}\n`);
-          const event = yield* fetchPolymarketEvent(slug);
+
+          const event = yield* fetchPolymarketEvent(slug as string);
           process.stdout.write(`Found: ${event.title}\n`);
 
           // Parse markets into threshold lines, skipping non-numeric titles.
