@@ -29,17 +29,20 @@ src/
 ├── index.ts                  # CLI entry point — registers commands and calls cli.parse()
 ├── types.ts                  # All shared interfaces, types, and typed error classes
 ├── commands/
-│   ├── forecast.ts           # forecast command action
-│   └── bias.ts               # bias set/list command actions
+│   ├── forecast.ts           # forecast command action (now supports --polymarket)
+│   ├── bias.ts               # bias set/list command actions
+│   └── polymarket.ts         # polymarket fetch — scrapes Gamma API into predicts/<slug>.md
 ├── bias/
 │   ├── store.ts              # Async read/write of data/bias.json (Effect)
 │   └── apply.ts              # Applies bias correction to a raw forecast (pure)
 ├── fetchers/
-│   └── openMeteo.ts          # Fetches from all models via Open-Meteo API (Effect)
+│   ├── openMeteo.ts          # Fetches from all models via Open-Meteo API (Effect)
+│   └── polymarket.ts         # Fetches event + markets from Polymarket Gamma API (Effect)
 ├── utils/
 │   ├── constants.ts          # All project-wide constants (URLs, timeouts, models, paths)
-│   ├── display.ts            # Terminal output — tables and formatted results
+│   ├── display.ts            # Terminal output — tables, formatted results, Polymarket analysis
 │   ├── geocoding.ts          # City name → lat/lon via Open-Meteo geocoding API (Effect)
+│   ├── parsePolymarket.ts    # Parses predicts/*.md odds files (Effect)
 │   ├── runOrExit.ts          # Runs an Effect and exits process on failure
 │   ├── stats.ts              # Pure math: mean, stddev, percentile, normalCDF
 │   └── validateDate.ts       # CLI date validation with warnings
@@ -48,6 +51,7 @@ src/
 
 data/
 └── bias.json                 # Persisted bias corrections — DO NOT commit with real values
+predicts/                     # Scraped Polymarket odds — one .md file per event (see format below)
 dist/                         # Compiled JS output — gitignored, never edit directly
 ```
 
@@ -55,14 +59,14 @@ dist/                         # Compiled JS output — gitignored, never edit di
 
 ## Data Sources
 
-All data comes from **Open-Meteo** (free, no API key required):
+### Open-Meteo (weather forecasts) — free, no API key
 
 | Purpose | Endpoint |
 |---------|----------|
 | Geocoding | `https://geocoding-api.open-meteo.com/v1/search` |
 | Forecasts | `https://api.open-meteo.com/v1/forecast` |
 
-### Weather Models
+#### Weather Models
 
 | Model ID | Open-Meteo param | Provider | Resolution |
 |----------|-----------------|----------|------------|
@@ -70,6 +74,20 @@ All data comes from **Open-Meteo** (free, no API key required):
 | `gfs`    | `gfs_seamless`  | NOAA     | 50 km, 16-day |
 | `icon`   | `icon_seamless` | DWD      | 2–11 km, 7–15 day |
 | `gem`    | `gem_global`    | ECCC     | ~25 km, 16-day |
+
+### Polymarket Gamma API (market odds) — free, no auth
+
+| Purpose | Endpoint |
+|---------|----------|
+| Event + markets | `https://gamma-api.polymarket.com/events?slug=<slug>` |
+
+- The `<slug>` is the last path segment of any Polymarket event URL
+  (e.g. `highest-temperature-in-london-on-may-21-2026`).
+- Response is an array of events; each event has a nested `markets` array — one entry per
+  temperature bucket.
+- Each market exposes `groupItemTitle` (e.g. `"22°C"` or `"18°C or below"`) and
+  `outcomePrices`, which is a **JSON-encoded string** like `"[\"0.43\", \"0.57\"]"`
+  containing `[yesPrice, noPrice]` in `0–1` format. Always `JSON.parse` before using.
 
 ---
 
@@ -83,6 +101,17 @@ node dist/index.js forecast --city "London" --date "2026-05-20" --threshold "18,
 # Manage bias corrections
 node dist/index.js bias set --city "London" --model ifs --value -1.5
 node dist/index.js bias list
+
+# Scrape Polymarket odds for an event → predicts/<slug>.md
+node dist/index.js polymarket fetch \
+  --url "https://polymarket.com/event/highest-temperature-in-london-on-may-21-2026"
+# Optional custom output path:
+node dist/index.js polymarket fetch --url "..." --output predicts/London-21-may.md
+
+# Compare model probabilities against the scraped Polymarket odds.
+# Thresholds are extracted automatically from the .md file (merged with any --threshold).
+node dist/index.js forecast --city "London" --date "2026-05-21" \
+  --polymarket predicts/highest-temperature-in-london-on-may-21-2026.md
 ```
 
 ### Development Scripts
@@ -116,6 +145,42 @@ pnpm run fmt:check    # Prettier check (useful in CI)
 - All `fetch` calls use Effect's built-in `AbortSignal` (via `Effect.tryPromise`) and `Effect.timeout('10 seconds')`
 - `fetchAllModels` uses `Effect.forEach` with `Effect.either` — one failing model never blocks the others
 - If a model returns HTTP 200 but all-null data, `fetchModel` fails with a descriptive `FetchError` so the warning is always visible
+
+### Polymarket Analysis
+
+Polymarket weather events are split into discrete temperature buckets. Each market belongs to
+one of **three kinds** — assigned automatically when scraping (`src/commands/polymarket.ts`):
+
+| Kind    | `groupItemTitle` example | Wins YES when |
+|---------|--------------------------|---------------|
+| `below` | `"18°C or below"` (first bucket) | `max ≤ 18` |
+| `exact` | `"22°C"` (middle bucket)         | `max` falls in the `[X, X+1)` bucket |
+| `above` | `"28°C"` (last bucket)           | `max ≥ 28` |
+
+#### Model probability per kind
+`buildRecommendations()` in `src/utils/display.ts` computes the model's estimate as:
+
+| Kind    | Formula |
+|---------|---------|
+| `below` | `100 − probAbove(X)` |
+| `exact` | `probAbove(X−1) − probAbove(X)` *(needs consecutive integer thresholds)* |
+| `above` | `probAbove(X)` |
+
+#### Edge & signal logic
+- `edge = modelProb% − marketYesProb%`
+- `edge ≥ MIN_BET_EDGE_PERCENT` → **BET YES**
+- `edge ≤ −MIN_BET_EDGE_PERCENT` → **BET NO**
+- Otherwise → **SKIP**
+- "Best opportunity" = highest absolute edge among non-SKIP recommendations
+
+#### File format (`predicts/<slug>.md`)
+```
+18 | BELOW | YES 0.2 | NO 99.9
+22 | EXACT | YES 25.5 | NO 74.5
+28 | ABOVE | YES 0.1 | NO 100
+```
+The legacy format `22 | YES 27 | NO 74` (no kind marker) is still parsed for backward
+compatibility — those lines default to `kind='above'`.
 
 ---
 
@@ -283,3 +348,8 @@ Command actions must never be `async`. Use `runOrExit` from `src/utils/runOrExit
   back-testing yet.
 - `data/bias.json` uses the **resolved city name** (e.g. `"London"`, not `"london"`) as the key.
   The city name comes from the Open-Meteo geocoding API response.
+- Polymarket `exact` analysis assumes **consecutive integer thresholds**. If the scraped
+  thresholds are sparse (e.g. `22, 25, 28`), the EXACT formula falls back to `N/A` because
+  `probAbove(X−1)` isn't available.
+- `outcomePrices` from the Gamma API is a **JSON-encoded string**, not an array — both
+  `parsePolymarket` (file → struct) and the fetch command (API → file) rely on this.
