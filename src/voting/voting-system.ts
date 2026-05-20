@@ -3,6 +3,18 @@ import { mean, stddev, percentile, normalCDF } from '#utils/stats.js';
 import type { CorrectedForecast, EnsembleResult } from '#types.js';
 import { EnsembleError } from '#types.js';
 
+/**
+ * Pure computation of ensemble statistics from a set of corrected model forecasts.
+ *
+ * Filters out models with null or error data, then computes mean, standard deviation,
+ * percentiles (P10–P90), and threshold probabilities using a normal distribution fit
+ * over the ensemble spread.
+ *
+ * @param correctedForecasts - All corrected model forecasts, including failed ones.
+ * @param thresholds - Temperature thresholds for which to compute `P(max > X)`.
+ * @returns A complete {@link EnsembleResult} with all ensemble statistics.
+ * @throws Error if no valid models remain after filtering.
+ */
 function runVotingSystemPure(
   correctedForecasts: CorrectedForecast[],
   thresholds: number[],
@@ -47,6 +59,16 @@ function runVotingSystemPure(
   };
 }
 
+/**
+ * Effect wrapper around {@link runVotingSystemPure} for safe use in the I/O pipeline.
+ *
+ * Catches any errors thrown by the pure function and converts them into typed
+ * {@link EnsembleError} failures so they propagate correctly through the Effect stack.
+ *
+ * @param correctedForecasts - Bias-corrected forecasts from all NWP models.
+ * @param thresholds - Temperature thresholds for probability computation (default: `[]`).
+ * @returns An Effect resolving to {@link EnsembleResult}, or failing with {@link EnsembleError}.
+ */
 export const runVotingSystem = (
   correctedForecasts: CorrectedForecast[],
   thresholds: number[] = [],

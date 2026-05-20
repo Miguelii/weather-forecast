@@ -8,6 +8,20 @@ interface OpenMeteoResponse {
   daily?: { temperature_2m_max?: (number | null)[]; temperature_2m_min?: (number | null)[] };
 }
 
+/**
+ * Fetches a daily max/min temperature forecast for a single NWP model from the Open-Meteo API.
+ *
+ * Falls back to deriving max/min from hourly data when the daily aggregation endpoint returns
+ * null values (e.g. AIFS). Fails with a descriptive {@link FetchError} if no temperature data
+ * is available after the fallback, ensuring warnings are always visible in the CLI output.
+ *
+ * @param lat - Latitude of the target location.
+ * @param lon - Longitude of the target location.
+ * @param date - Target date in `YYYY-MM-DD` format.
+ * @param modelDef - Model definition containing the Open-Meteo API parameter name.
+ * @returns A {@link RawForecast} with `tempMax`, `tempMin`, and `tempMean` for the requested date.
+ * @throws FetchError if the request fails, times out, or returns no usable temperature data.
+ */
 export const fetchModel = Effect.fn('fetchModel')(function* (
   lat: number,
   lon: number,
@@ -90,6 +104,18 @@ export const fetchModel = Effect.fn('fetchModel')(function* (
   } satisfies RawForecast;
 });
 
+/**
+ * Fetches forecasts from all configured NWP models in parallel.
+ *
+ * Uses `Effect.either` so that one failing model never blocks the others — failed models
+ * are returned as {@link RawForecast} entries with `error` set and all temperature fields null.
+ * A warning is printed to stderr for each failure.
+ *
+ * @param lat - Latitude of the target location.
+ * @param lon - Longitude of the target location.
+ * @param date - Target date in `YYYY-MM-DD` format.
+ * @returns Array of {@link RawForecast} objects, one per model in {@link MODELS} order.
+ */
 export const fetchAllModels = Effect.fn('fetchAllModels')(function* (
   lat: number,
   lon: number,

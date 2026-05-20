@@ -21,6 +21,15 @@ function parseTempFromTitle(title: string): number | null {
   return Number.isNaN(val) ? null : val;
 }
 
+/**
+ * Registers the `polymarket` command group and its sub-commands on the CLI.
+ *
+ * Currently exposes `polymarket fetch --url <URL>`, which fetches live odds from the
+ * Polymarket Gamma API and saves them as a `predicts/` markdown file for use with
+ * `forecast --polymarket`.
+ *
+ * @param cli - The root Commander instance to attach the command to.
+ */
 export function registerPolymarketCommand(cli: Command): void {
   const polymarket = cli
     .command('polymarket')
@@ -40,17 +49,19 @@ export function registerPolymarketCommand(cli: Command): void {
             catch: () => new PolymarketFetchError({ cause: `Invalid URL: "${opts.url}"` }),
           });
 
-          const slug = parsed.pathname.split('/').filter(Boolean).at(-1);
-
-          if (!slug) {
+          const rawSlug = parsed.pathname.split('/').filter(Boolean).at(-1);
+          if (!rawSlug) {
             yield* new PolymarketFetchError({
               cause: `Cannot extract event slug from URL: "${opts.url}"`,
             });
           }
+          // Effect runtime guarantees rawSlug is defined past this point;
+          // the assertion communicates this to TypeScript's type checker.
+          const slug = rawSlug as string;
 
           process.stdout.write(`Fetching Polymarket event: ${slug}\n`);
 
-          const event = yield* fetchPolymarketEvent(slug as string);
+          const event = yield* fetchPolymarketEvent(slug);
           process.stdout.write(`Found: ${event.title}\n`);
 
           // Parse markets into threshold lines, skipping non-numeric titles.

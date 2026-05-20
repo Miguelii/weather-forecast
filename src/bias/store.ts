@@ -4,6 +4,15 @@ import type { BiasStore, ModelId } from '#types.js';
 import { BiasStoreError } from '#types.js';
 import { BIAS_PATH } from '#utils/constants.js';
 
+/**
+ * Reads the bias store from disk.
+ *
+ * Returns an empty store if the file is missing or unreadable — a missing file
+ * is a valid initial state, not an error.
+ *
+ * @returns The full {@link BiasStore} object, or `{}` if no file exists yet.
+ * @throws BiasStoreError if the file exists but cannot be parsed as valid JSON.
+ */
 export const loadBias = Effect.fn('loadBias')(function* () {
   const result = yield* Effect.either(
     Effect.tryPromise({
@@ -21,16 +30,35 @@ export const loadBias = Effect.fn('loadBias')(function* () {
   });
 });
 
+/** Serialises and writes the full bias store to disk. */
 const saveBias = (data: BiasStore): Effect.Effect<void, BiasStoreError> =>
   Effect.tryPromise({
     try: () => writeFile(BIAS_PATH, JSON.stringify(data, null, 2)),
     catch: (err) => new BiasStoreError({ cause: String(err) }),
   });
 
+/**
+ * Looks up the stored bias correction for a specific city/model pair.
+ *
+ * @param store - In-memory bias store.
+ * @param city - Resolved city name (case-sensitive).
+ * @param model - NWP model identifier.
+ * @returns The stored bias in °C, or `0` if no correction has been set for this pair.
+ */
 export function getBiasValue(store: BiasStore, city: string, model: ModelId): number {
   return store[city]?.[model] ?? 0;
 }
 
+/**
+ * Persists a bias correction for a city/model pair to disk.
+ *
+ * Reads the current store, upserts the value, and writes it back.
+ *
+ * @param city - Resolved city name (case-sensitive; must match the geocoding API output).
+ * @param model - NWP model identifier.
+ * @param value - Bias in °C (subtracted from raw forecast; positive = model runs warm).
+ * @throws BiasStoreError if the store cannot be read or written.
+ */
 export const setBias = Effect.fn('setBias')(function* (
   city: string,
   model: ModelId,

@@ -133,7 +133,9 @@ pnpm run fmt:check    # Prettier check (useful in CI)
 - All shared types live in `src/types.ts` — do not define inline object types that are reused across files
 
 ### Comments & JSDoc
-- Public exported functions in `utils/` must have JSDoc (`@param`, `@returns`, `@throws`, `@example`)
+- **All functions must have JSDoc — no exceptions**, regardless of visibility or location
+- Exported functions: `@param`, `@returns`, `@throws` (when applicable), `@example` (when it aids understanding)
+- Private/internal helpers: at minimum a single-line description line
 - Inline comments explain **why**, not **what** — the code itself explains what
 - No commented-out code — delete it
 

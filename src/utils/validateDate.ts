@@ -1,5 +1,14 @@
 import { DATE_RE, MAX_FORECAST_DAYS } from '#utils/constants.js';
 
+/**
+ * Validates a date string from the CLI and prints warnings for out-of-range dates.
+ *
+ * Exits the process with code 1 if the date is not in `YYYY-MM-DD` format.
+ * Prints a warning to stderr (but continues) if the date is in the past or
+ * beyond the maximum forecast horizon ({@link MAX_FORECAST_DAYS}).
+ *
+ * @param date - Date string to validate (expected format: `YYYY-MM-DD`).
+ */
 export function validateDate(date: string): void {
   if (!DATE_RE.test(date)) {
     console.error(`Error: --date must be in YYYY-MM-DD format (got "${date}")`);

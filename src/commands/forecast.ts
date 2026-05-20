@@ -10,6 +10,15 @@ import { printForecastOutput } from '#utils/display.js';
 import { parsePolymarket } from '#utils/parsePolymarket.js';
 import { runOrExit } from '#utils/runOrExit.js';
 
+/**
+ * Registers the `forecast` command on the CLI.
+ *
+ * Fetches ensemble NWP forecasts for a city/date, applies bias corrections,
+ * runs the voting system, and prints a formatted report. Optionally compares
+ * model probabilities against Polymarket odds when `--polymarket` is supplied.
+ *
+ * @param cli - The root Commander instance to attach the command to.
+ */
 export function registerForecastCommand(cli: Command): void {
   cli
     .command('forecast')

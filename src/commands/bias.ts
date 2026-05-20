@@ -7,6 +7,11 @@ import { runOrExit } from '#utils/runOrExit.js';
 
 const VALID_MODELS: ModelId[] = ['ifs', 'gfs', 'icon', 'gem'];
 
+/**
+ * Registers the `bias` command group and its sub-commands (`set`, `list`) on the CLI.
+ *
+ * @param cli - The root Commander instance to attach the command to.
+ */
 export function registerBiasCommand(cli: Command): void {
   const biasCmd = cli.command('bias').description('Manage model bias corrections');
 

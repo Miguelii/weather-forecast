@@ -10,13 +10,28 @@ import type {
 } from '#types.js';
 import { MIN_BET_EDGE_PERCENT } from '#utils/constants.js';
 
+/** Formats a nullable temperature value for table display (e.g. `"22°C"` or `"n/a"`). */
 const fmt = (v: number | null): string => (v !== null ? `${v}°C` : 'n/a');
 
+/** Formats a bias value with explicit sign for table display (e.g. `"+1.5"` or `"-0.5"`). */
 const fmtBias = (b: number): string => {
   if (b === 0) return '  0.0';
   return b > 0 ? `+${b}` : `${b}`;
 };
 
+/**
+ * Computes a bet recommendation for each Polymarket line by comparing the market's
+ * YES price against the model's estimated probability.
+ *
+ * The model probability formula varies by market kind:
+ * - `above`: `P(max > X)` = `probAbove(X)`
+ * - `below`: `P(max ≤ X)` = `100 − probAbove(X)`
+ * - `exact`: `P(max ≈ X bucket)` = `probAbove(X−1) − probAbove(X)`
+ *
+ * @param lines - Parsed Polymarket market lines (including `kind` metadata).
+ * @param probs - Model-computed probabilities from the voting system.
+ * @returns Array of {@link BetRecommendation} objects, one per line.
+ */
 function buildRecommendations(
   lines: PolymarketLine[],
   probs: ProbabilityResult[],
@@ -51,18 +66,26 @@ function buildRecommendations(
   });
 }
 
+/** Formats an edge value as a signed percentage string (e.g. `"+21.5%"` or `"-7.0%"`). */
 function fmtEdge(edge: number): string {
   if (Number.isNaN(edge)) return 'N/A';
   const sign = edge >= 0 ? '+' : '';
   return `${sign}${edge.toFixed(1)}%`;
 }
 
+/** Formats a bet signal enum value for table display. */
 function fmtSignal(signal: BetRecommendation['signal']): string {
   if (signal === 'YES') return 'BET YES';
   if (signal === 'NO') return 'BET NO';
   return '—  skip';
 }
 
+/**
+ * Prints the Polymarket vs. model analysis table and best-opportunity summary to stdout.
+ *
+ * @param lines - Parsed Polymarket market lines (with `kind`: below / exact / above).
+ * @param probs - Model-computed probabilities from the voting system.
+ */
 function printPolymarketAnalysis(lines: PolymarketLine[], probs: ProbabilityResult[]): void {
   const recs = buildRecommendations(lines, probs);
 
@@ -112,6 +135,16 @@ function printPolymarketAnalysis(lines: PolymarketLine[], probs: ProbabilityResu
   console.log('\n');
 }
 
+/**
+ * Prints the full forecast report to stdout: model table, ensemble summary, percentile
+ * table, probability bars, and (optionally) Polymarket analysis.
+ *
+ * @param location - Resolved city location with coordinates and display name.
+ * @param date - Target date string in `YYYY-MM-DD` format.
+ * @param corrected - Bias-corrected forecasts from all NWP models.
+ * @param ensemble - Ensemble statistics computed by the voting system.
+ * @param polymarketLines - Optional Polymarket odds; if provided, appends the analysis section.
+ */
 export function printForecastOutput(
   location: Location,
   date: string,
@@ -189,6 +222,11 @@ export function printForecastOutput(
   }
 }
 
+/**
+ * Prints all stored bias corrections as a formatted table to stdout.
+ *
+ * @param data - The full bias store to display.
+ */
 export function printBiasTable(data: BiasStore): void {
   const entries = Object.entries(data);
   if (!entries.length) {
