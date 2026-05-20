@@ -61,6 +61,8 @@ export type BiasStore = Record<string, Partial<Record<ModelId, number>>>;
 
 export interface PolymarketLine {
   threshold: number;
+  /** Semantics of this market bucket. */
+  kind: 'below' | 'exact' | 'above';
   yesProb: number;
   noProb: number;
 }
@@ -108,4 +110,26 @@ export class PolymarketParseError extends Data.TaggedError('PolymarketParseError
   get message(): string {
     return this.cause;
   }
+}
+
+export class PolymarketFetchError extends Data.TaggedError('PolymarketFetchError')<{
+  cause: string;
+}> {
+  get message(): string {
+    return this.cause;
+  }
+}
+
+// ─── Polymarket Gamma API ─────────────────────────────────────────────────────
+
+export interface PolymarketMarket {
+  groupItemTitle: string;
+  outcomePrices: string; // JSON-encoded string: "[\"0.43\", \"0.57\"]" — YES, NO in 0–1 format
+}
+
+export interface PolymarketEvent {
+  slug: string;
+  title: string;
+  endDate: string;
+  markets: PolymarketMarket[];
 }

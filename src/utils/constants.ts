@@ -26,3 +26,5 @@ export const MAX_FORECAST_DAYS = 15;
 
 // ─── Polymarket ───────────────────────────────────────────────────────────────
 export const MIN_BET_EDGE_PERCENT = 5;
+export const POLYMARKET_GAMMA_URL = 'https://gamma-api.polymarket.com';
+export const PREDICTS_DIR = resolve(currentDir, '../../predicts');

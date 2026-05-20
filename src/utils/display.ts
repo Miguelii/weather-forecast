@@ -23,7 +23,24 @@ function buildRecommendations(
 ): BetRecommendation[] {
   return lines.map((line) => {
     const match = probs.find((p) => p.threshold === line.threshold);
-    const modelProb = match ? match.probAbove : NaN;
+
+    // Compute model probability according to the market's semantics:
+    //   above → P(max > X)              = probAbove(X)
+    //   below → P(max ≤ X)              = 100 - probAbove(X)
+    //   exact → P(max in [X, X+1) bucket) ≈ probAbove(X-1) - probAbove(X)
+    let modelProb: number;
+    if (!match) {
+      modelProb = NaN;
+    } else if (line.kind === 'above') {
+      modelProb = match.probAbove;
+    } else if (line.kind === 'below') {
+      modelProb = 100 - match.probAbove;
+    } else {
+      // exact: need the probAbove for the previous integer threshold
+      const prev = probs.find((p) => p.threshold === line.threshold - 1);
+      modelProb = prev ? prev.probAbove - match.probAbove : NaN;
+    }
+
     const edge = Number.isNaN(modelProb) ? NaN : modelProb - line.yesProb;
     let signal: BetRecommendation['signal'] = 'SKIP';
     if (!Number.isNaN(edge)) {
@@ -53,14 +70,17 @@ function printPolymarketAnalysis(lines: PolymarketLine[], probs: ProbabilityResu
   console.log('─────────────────────────────────────────────────────');
 
   const table = new Table({
-    head: ['Threshold', 'Market YES', 'Model P(>)', 'Edge', 'Signal'],
-    colAligns: ['right', 'right', 'right', 'right', 'left'],
+    head: ['Threshold', 'Type', 'Market YES', 'Model Est.', 'Edge', 'Signal'],
+    colAligns: ['right', 'left', 'right', 'right', 'right', 'left'],
     style: { head: ['cyan'] },
   });
 
   for (const r of recs) {
+    const line = lines.find((l) => l.threshold === r.threshold);
+    const kindLabel = line ? line.kind.toUpperCase() : '';
     table.push([
       `${r.threshold}°C`,
+      kindLabel,
       `${r.marketYesProb.toFixed(1)}%`,
       Number.isNaN(r.modelProb) ? 'N/A' : `${r.modelProb.toFixed(1)}%`,
       fmtEdge(r.edge),
@@ -74,8 +94,17 @@ function printPolymarketAnalysis(lines: PolymarketLine[], probs: ProbabilityResu
     .sort((a, b) => Math.abs(b.edge) - Math.abs(a.edge))[0];
 
   if (best) {
+    const bestLine = lines.find((l) => l.threshold === best.threshold);
+    let kindDesc: string;
+    if (bestLine?.kind === 'below') {
+      kindDesc = `max ≤ ${best.threshold}°C`;
+    } else if (bestLine?.kind === 'exact') {
+      kindDesc = `max = ${best.threshold}°C`;
+    } else {
+      kindDesc = `max > ${best.threshold}°C`;
+    }
     console.log(
-      ` Best opportunity: BET ${best.signal} on P(max > ${best.threshold}°C)  [edge: ${fmtEdge(best.edge)}]`,
+      ` Best opportunity: BET ${best.signal} on ${kindDesc}  [edge: ${fmtEdge(best.edge)}]`,
     );
   } else {
     console.log(' No clear edge — market prices appear aligned with the model.');
