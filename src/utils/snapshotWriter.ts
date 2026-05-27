@@ -88,6 +88,8 @@ function buildSnapshotMarkdown(
     parts.push('');
   }
 
+  parts.push('FINAL RESULT: ', '');
+
   return `${parts.join('\n')}\n`;
 }
 

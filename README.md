@@ -20,7 +20,7 @@ node dist/index.js forecast --city "Madrid" --date "2026-05-22" --polymarket pre
 
 -- OR --
 
-node dist/index.js forecast --city "Madrid" --date "2026-05-22" --polymarket "https://polymarket.com/pt/event/highest-temperature-in-madrid-on-may-22-2026"
+node dist/index.js forecast --city "Singapore" --date "2026-05-28" --polymarket "https://polymarket.com/pt/event/highest-temperature-in-singapore-on-may-28-2026"
 
 ### 4. Run Model withour bet opportunity (skip step 2. and 3.)
 
