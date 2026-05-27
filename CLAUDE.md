@@ -19,6 +19,7 @@ The goal is to identify mispricings in Polymarket weather prediction markets.
 - **Effect:** `effect` library for typed errors, async I/O, and concurrency
 - **Linter:** ESLint with `airbnb-base` + `@typescript-eslint`
 - **Formatter:** Prettier
+- **Tests:** None — no test framework is configured
 
 ---
 
@@ -44,6 +45,7 @@ src/
 │   ├── geocoding.ts          # City name → lat/lon via Open-Meteo geocoding API (Effect)
 │   ├── parsePolymarket.ts    # Parses predicts/*.md odds files (Effect)
 │   ├── runOrExit.ts          # Runs an Effect and exits process on failure
+│   ├── snapshotWriter.ts     # Appends forecast snapshots to docs/<YYYY-MMM>.md (Effect)
 │   ├── stats.ts              # Pure math: mean, stddev, percentile, normalCDF
 │   └── validateDate.ts       # CLI date validation with warnings
 └── voting/
@@ -196,6 +198,7 @@ compatibility — those lines default to `kind='above'`.
 - Prefer type guards over `as` casts where possible
 - All exported functions must have explicit return types
 - All shared types live in `src/types.ts` — do not define inline object types that are reused across files
+- All imports must use `.js` extensions (ESM + NodeNext): `import { x } from './foo.js'` — omitting the extension compiles fine but fails at runtime
 
 ### Comments & JSDoc
 - **All functions must have JSDoc — no exceptions**, regardless of visibility or location
@@ -341,8 +344,7 @@ Command actions must never be `async`. Use `runOrExit` from `src/utils/runOrExit
 
 ## Known Limitations
 
-- **AIFS** frequently returns `null` values on Open-Meteo — this is an upstream data availability
-  issue, not a bug. The voting system gracefully skips models with no data.
+- **AIFS** is currently disabled (commented out in `MODELS` in `src/utils/constants.ts`) due to chronic null-data responses from Open-Meteo upstream. Re-enable by uncommenting and adding `'aifs'` back to the `ModelId` union in `src/types.ts`.
 - Models cover at most **15 days** ahead. The CLI warns if the requested date is out of range.
 - Bias corrections must be set manually via `bias set`. There is no automated historical
   back-testing yet.

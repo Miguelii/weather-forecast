@@ -1,1 +1,29 @@
-{}
+{
+  "London": {
+    "ifs": -2.5,
+    "gfs": -2.5,
+    "icon": -1,
+    "gem": -1
+  },
+  "Paris": {
+    "ifs": -3.5,
+    "gfs": -1.5,
+    "icon": -1,
+    "gem": -1.5
+  },
+  "Beijing": {
+    "ifs": -2,
+    "gfs": -0.5,
+    "icon": -1.5,
+    "gem": -1
+  },
+  "Shenzhen": {
+    "ifs": -1.5,
+    "gfs": -1.5,
+    "gem": -1
+  },
+  "Singapore": {
+    "gfs": -1.5,
+    "icon": -1
+  }
+}
