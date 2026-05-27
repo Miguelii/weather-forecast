@@ -32,7 +32,7 @@ const fmtBias = (b: number): string => {
  * @param probs - Model-computed probabilities from the voting system.
  * @returns Array of {@link BetRecommendation} objects, one per line.
  */
-function buildRecommendations(
+export function buildRecommendations(
   lines: PolymarketLine[],
   probs: ProbabilityResult[],
 ): BetRecommendation[] {
@@ -67,7 +67,7 @@ function buildRecommendations(
 }
 
 /** Formats an edge value as a signed percentage string (e.g. `"+21.5%"` or `"-7.0%"`). */
-function fmtEdge(edge: number): string {
+export function fmtEdge(edge: number): string {
   if (Number.isNaN(edge)) return 'N/A';
   const sign = edge >= 0 ? '+' : '';
   return `${sign}${edge.toFixed(1)}%`;

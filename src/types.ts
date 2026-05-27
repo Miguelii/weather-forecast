@@ -120,6 +120,12 @@ export class PolymarketFetchError extends Data.TaggedError('PolymarketFetchError
   }
 }
 
+export class SnapshotWriteError extends Data.TaggedError('SnapshotWriteError')<{ cause: string }> {
+  get message(): string {
+    return this.cause;
+  }
+}
+
 // ─── Polymarket Gamma API ─────────────────────────────────────────────────────
 
 export interface PolymarketMarket {

@@ -28,3 +28,20 @@ export const MAX_FORECAST_DAYS = 15;
 export const MIN_BET_EDGE_PERCENT = 5;
 export const POLYMARKET_GAMMA_URL = 'https://gamma-api.polymarket.com';
 export const PREDICTS_DIR = resolve(currentDir, '../../predicts');
+
+// ─── Snapshots ────────────────────────────────────────────────────────────────
+export const DOCS_DIR = resolve(currentDir, '../../docs');
+export const MONTH_NAMES = [
+  'jan',
+  'feb',
+  'mar',
+  'apr',
+  'may',
+  'jun',
+  'jul',
+  'aug',
+  'sep',
+  'oct',
+  'nov',
+  'dec',
+] as const;

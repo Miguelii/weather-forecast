@@ -9,6 +9,8 @@ import { validateDate } from '#utils/validateDate.js';
 import { printForecastOutput } from '#utils/display.js';
 import { parsePolymarket } from '#utils/parsePolymarket.js';
 import { runOrExit } from '#utils/runOrExit.js';
+import { appendForecastSnapshot } from '#utils/snapshotWriter.js';
+import { fetchAndSavePolymarketOdds } from '#commands/polymarket.js';
 
 /**
  * Registers the `forecast` command on the CLI.
@@ -26,14 +28,22 @@ export function registerForecastCommand(cli: Command): void {
     .requiredOption('--city <name>', 'City name (e.g. "London")')
     .requiredOption('--date <YYYY-MM-DD>', 'Target date')
     .option('--threshold <temps>', 'Comma-separated temperature thresholds (e.g. "18,20,22")')
-    .option('--polymarket <file>', 'Path to Polymarket odds file (e.g. predicts/London-21-may.md)')
+    .option(
+      '--polymarket <file|url>',
+      'Polymarket odds file path or event URL — fetches and saves odds automatically when a URL is provided',
+    )
     .action((opts: { city: string; date: string; threshold?: string; polymarket?: string }) => {
       validateDate(opts.date);
 
       runOrExit(
         Effect.gen(function* () {
-          const polymarketLines = opts.polymarket
-            ? yield* parsePolymarket(opts.polymarket)
+          // Accept either a pre-saved odds file or a live Polymarket event URL
+          const polymarketPath = opts.polymarket?.startsWith('http')
+            ? yield* fetchAndSavePolymarketOdds(opts.polymarket)
+            : opts.polymarket;
+
+          const polymarketLines = polymarketPath
+            ? yield* parsePolymarket(polymarketPath)
             : undefined;
 
           // Merge explicit thresholds with those extracted from the Polymarket file
@@ -62,6 +72,16 @@ export function registerForecastCommand(cli: Command): void {
           const ensemble = yield* runVotingSystem(corrected, thresholds);
 
           printForecastOutput(location, opts.date, corrected, ensemble, polymarketLines);
+
+          if (polymarketLines) {
+            yield* appendForecastSnapshot(
+              location,
+              opts.date,
+              corrected,
+              ensemble,
+              polymarketLines,
+            );
+          }
         }),
       );
     });
