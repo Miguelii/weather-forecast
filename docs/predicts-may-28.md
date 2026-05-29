@@ -40,6 +40,7 @@ Probabilities — P(max temp > X)
 | 30°C | EXACT | 38.5 | 10.0 | -28.5% | NO |
 | 31°C | ABOVE | 45.5 | 62.0 | +16.5% | YES |
 
+FINAL RESULT: 31
 ---
 
 ## Run: 2026-05-27T15:13:30.004Z · Paris, France · 2026-05-28
@@ -82,6 +83,7 @@ Probabilities — P(max temp > X)
 | 34°C | EXACT | 5.5 | 11.0 | +5.5% | YES |
 | 35°C | ABOVE | 1.3 | 43.0 | +41.7% | YES |
 
+FINAL RESULT: 33
 ---
 
 ## Run: 2026-05-27T15:15:06.846Z · Beijing, China · 2026-05-28
@@ -124,6 +126,7 @@ Probabilities — P(max temp > X)
 | 36°C | EXACT | 0.3 | 0.0 | -0.3% | SKIP |
 | 37°C | ABOVE | 0.2 | 0.0 | -0.2% | SKIP |
 
+FINAL RESULT: 30
 ---
 
 ## Run: 2026-05-27T15:15:25.554Z · Shenzhen, China · 2026-05-28
@@ -166,6 +169,7 @@ Probabilities — P(max temp > X)
 | 34°C | EXACT | 35.0 | 39.0 | +4.0% | SKIP |
 | 35°C | ABOVE | 19.5 | 11.0 | -8.5% | NO |
 
+FINAL RESULT: 33
 ---
 
 ## Run: 2026-05-27T15:15:38.005Z · Singapore, Singapore · 2026-05-28
@@ -208,3 +212,4 @@ Probabilities — P(max temp > X)
 | 35°C | EXACT | 0.8 | 0.0 | -0.8% | SKIP |
 | 36°C | ABOVE | 0.4 | 0.0 | -0.4% | SKIP |
 
+FINAL RESULT: 32
