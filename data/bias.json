@@ -6,16 +6,16 @@
     "gem": -1
   },
   "Paris": {
-    "ifs": -3.5,
-    "gfs": -1.5,
-    "icon": -1,
-    "gem": -1.5
+    "ifs": -2.5,
+    "gfs": -1,
+    "icon": -0.2,
+    "gem": -0.1
   },
   "Beijing": {
-    "ifs": -2,
-    "gfs": -0.5,
-    "icon": -1.5,
-    "gem": -1
+    "ifs": -1.6,
+    "gfs": 0.7,
+    "icon": -0.6,
+    "gem": 0.3
   },
   "Shenzhen": {
     "ifs": -1.5,
