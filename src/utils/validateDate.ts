@@ -19,13 +19,13 @@ export function validateDate(date: string): void {
 
   if (daysDiff < -1) {
     console.warn(
-      '⚠️  Data no passado — os modelos não têm dados históricos, podem devolver nulos.',
+      '⚠️  Date in the past — the models do not have historical data and may return null values.',
     );
   }
 
   if (daysDiff > MAX_FORECAST_DAYS) {
     console.warn(
-      `⚠️  Data além de ${MAX_FORECAST_DAYS} dias — modelos podem não ter dados para essa data.`,
+      `⚠️  Date beyond ${MAX_FORECAST_DAYS} days — models may not have data for that date.`,
     );
   }
 }

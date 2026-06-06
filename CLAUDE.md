@@ -30,9 +30,10 @@ src/
 ├── index.ts                  # CLI entry point — registers commands and calls cli.parse()
 ├── types.ts                  # All shared interfaces, types, and typed error classes
 ├── commands/
-│   ├── forecast.ts           # forecast command action (now supports --polymarket)
+│   ├── forecast.ts           # forecast command + reusable runCityForecast Effect (--polymarket: file or URL)
+│   ├── forecastAll.ts        # forecast-all — runs runCityForecast for several cities on one date
 │   ├── bias.ts               # bias set/list command actions
-│   └── polymarket.ts         # polymarket fetch — scrapes Gamma API into predicts/<slug>.md
+│   └── polymarket.ts         # polymarket fetch + buildPolymarketEventUrl (city+date → event URL)
 ├── bias/
 │   ├── store.ts              # Async read/write of data/bias.json (Effect)
 │   └── apply.ts              # Applies bias correction to a raw forecast (pure)
@@ -40,12 +41,12 @@ src/
 │   ├── openMeteo.ts          # Fetches from all models via Open-Meteo API (Effect)
 │   └── polymarket.ts         # Fetches event + markets from Polymarket Gamma API (Effect)
 ├── utils/
-│   ├── constants.ts          # All project-wide constants (URLs, timeouts, models, paths)
+│   ├── constants.ts          # All project-wide constants (URLs, timeouts, models, paths, batch cities, month names)
 │   ├── display.ts            # Terminal output — tables, formatted results, Polymarket analysis
 │   ├── geocoding.ts          # City name → lat/lon via Open-Meteo geocoding API (Effect)
 │   ├── parsePolymarket.ts    # Parses predicts/*.md odds files (Effect)
 │   ├── runOrExit.ts          # Runs an Effect and exits process on failure
-│   ├── snapshotWriter.ts     # Appends forecast snapshots to docs/<YYYY-MMM>.md (Effect)
+│   ├── snapshotWriter.ts     # Appends forecast snapshots (incl. Polymarket URL) to docs/predicts-<month>-<day>.md (Effect)
 │   ├── stats.ts              # Pure math: mean, stddev, percentile, normalCDF
 │   └── validateDate.ts       # CLI date validation with warnings
 └── voting/
@@ -112,8 +113,18 @@ node dist/index.js polymarket fetch --url "..." --output predicts/London-21-may.
 
 # Compare model probabilities against the scraped Polymarket odds.
 # Thresholds are extracted automatically from the .md file (merged with any --threshold).
+# --polymarket accepts a saved file path OR a live event URL (fetched + saved automatically):
 node dist/index.js forecast --city "London" --date "2026-05-21" \
   --polymarket predicts/highest-temperature-in-london-on-may-21-2026.md
+node dist/index.js forecast --city "London" --date "2026-05-21" \
+  --polymarket "https://polymarket.com/event/highest-temperature-in-london-on-may-21-2026"
+
+# Run forecast + Polymarket comparison for several cities on one date.
+# The Polymarket event URL is built automatically from city + date.
+# Defaults to the 5 built-in cities (BATCH_CITIES: London, Paris, Beijing, Shenzhen, Singapore).
+node dist/index.js forecast-all --date "2026-06-07"
+# Override the city list (runs ONLY these, replacing the default):
+node dist/index.js forecast-all --date "2026-06-07" --cities "London,Paris"
 ```
 
 ### Development Scripts
@@ -128,9 +139,24 @@ pnpm run fmt:check    # Prettier check (useful in CI)
 
 > Always run `pnpm run build` after editing TypeScript. The CLI runs from `dist/`, not `src/`.
 
+> A husky `pre-commit` hook (`.husky/pre-commit`) runs `pnpm fmt`, stages the result (`git add -A`),
+> then `pnpm lint` — so every commit is auto-formatted and lint-checked before it lands.
+
 ---
 
 ## Key Architecture Decisions
+
+### Forecast Core (single vs. batch)
+- `runCityForecast` in `src/commands/forecast.ts` is the reusable Effect that runs a full
+  forecast for **one** city/date (resolve city → fetch models → bias → vote → print → snapshot).
+  Both the `forecast` and `forecast-all` commands call it — keep all forecast logic here.
+- `forecast-all` in `src/commands/forecastAll.ts` iterates cities **sequentially** (`for…of` +
+  `yield*`), not in parallel: parallel runs would interleave stdout and race on the read-modify-write
+  of the shared daily snapshot file. Each city is wrapped in `Effect.either` so one failure
+  (e.g. no Polymarket event) is reported in the summary without aborting the rest.
+- The Polymarket event URL for each city is built by `buildPolymarketEventUrl(city, date)` in
+  `src/commands/polymarket.ts` (slug: `highest-temperature-in-<city>-on-<full-month>-<day>-<year>`,
+  using `MONTH_NAMES_FULL`). `forecast --polymarket` accepts that URL or a saved file path.
 
 ### Bias Correction
 - Bias is stored per city (resolved name) and per model in `data/bias.json`
@@ -198,7 +224,11 @@ compatibility — those lines default to `kind='above'`.
 - Prefer type guards over `as` casts where possible
 - All exported functions must have explicit return types
 - All shared types live in `src/types.ts` — do not define inline object types that are reused across files
-- All imports must use `.js` extensions (ESM + NodeNext): `import { x } from './foo.js'` — omitting the extension compiles fine but fails at runtime
+  (e.g. `ForecastRunOptions`, shared by the `forecast` and `forecast-all` commands)
+- Internal modules are imported via the `#` **subpath aliases** declared in `package.json` → `imports`,
+  not relative paths: `#types.js`, `#utils/*.js`, `#fetchers/*.js`, `#bias/*.js`, `#voting/*.js`,
+  `#commands/*.js`. Example: `import { runCityForecast } from '#commands/forecast.js'`
+- All imports must keep the `.js` extension (ESM + NodeNext) — omitting it compiles fine but fails at runtime
 
 ### Comments & JSDoc
 - **All functions must have JSDoc — no exceptions**, regardless of visibility or location
