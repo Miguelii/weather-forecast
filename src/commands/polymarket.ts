@@ -4,12 +4,35 @@ import type { Command } from 'commander';
 import { Effect } from 'effect';
 import { PolymarketFetchError } from '#types.js';
 import { fetchPolymarketEvent } from '#fetchers/polymarket.js';
-import { PREDICTS_DIR } from '#utils/constants.js';
+import { MONTH_NAMES_FULL, POLYMARKET_EVENT_URL, PREDICTS_DIR } from '#utils/constants.js';
 import { parsePolymarket } from '#utils/parsePolymarket.js';
 import { runOrExit } from '#utils/runOrExit.js';
 
 // Matches the leading numeric part of a groupItemTitle like "23°C" or "23.5°C"
 const TEMP_RE = /^([\d.]+)/;
+
+/**
+ * Builds the canonical Polymarket "highest temperature" event URL for a city/date.
+ *
+ * Slug format: `highest-temperature-in-<city>-on-<month>-<day>-<year>` where the city is
+ * lowercased (spaces → hyphens), the month is its full English name, and the day has no
+ * leading zero.
+ *
+ * @param city - City name (e.g. `"Singapore"`); case and spaces are normalized.
+ * @param date - Target date in `YYYY-MM-DD` format.
+ * @returns The full Polymarket event URL.
+ * @example
+ * buildPolymarketEventUrl('Singapore', '2026-06-07')
+ * // → 'https://polymarket.com/event/highest-temperature-in-singapore-on-june-7-2026'
+ */
+export function buildPolymarketEventUrl(city: string, date: string): string {
+  const [year, monthStr, dayStr] = date.split('-');
+  const month = MONTH_NAMES_FULL[Number.parseInt(monthStr, 10) - 1];
+  const day = Number.parseInt(dayStr, 10);
+  const citySlug = city.trim().toLowerCase().replace(/\s+/g, '-');
+  const slug = `highest-temperature-in-${citySlug}-on-${month}-${day}-${year}`;
+  return `${POLYMARKET_EVENT_URL}/${slug}`;
+}
 
 /**
  * Parses a temperature value from a Polymarket market's `groupItemTitle`.

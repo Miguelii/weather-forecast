@@ -75,6 +75,14 @@ export interface BetRecommendation {
   signal: 'YES' | 'NO' | 'SKIP';
 }
 
+/** Options for a single city/date forecast run, shared by the `forecast` and `forecast-all` commands. */
+export interface ForecastRunOptions {
+  city: string;
+  date: string;
+  threshold?: string;
+  polymarket?: string;
+}
+
 // ─── Typed errors ─────────────────────────────────────────────────────────────
 
 export class GeocodingError extends Data.TaggedError('GeocodingError')<{ cause: string }> {

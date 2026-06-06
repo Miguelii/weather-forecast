@@ -14,6 +14,7 @@ import { buildRecommendations, fmtEdge } from '#utils/display.js';
  * @param corrected - Bias-corrected forecasts from all NWP models.
  * @param ensemble - Ensemble statistics computed by the voting system.
  * @param polymarketLines - Polymarket odds to include in the analysis table.
+ * @param polymarketUrl - The Polymarket event URL this snapshot was compared against.
  * @returns A Markdown string ready to be appended to the snapshot file.
  */
 function buildSnapshotMarkdown(
@@ -22,6 +23,7 @@ function buildSnapshotMarkdown(
   corrected: CorrectedForecast[],
   ensemble: EnsembleResult,
   polymarketLines: PolymarketLine[],
+  polymarketUrl: string,
 ): string {
   const ts = new Date().toISOString();
   const parts: string[] = [];
@@ -29,6 +31,8 @@ function buildSnapshotMarkdown(
   parts.push('---');
   parts.push('');
   parts.push(`## Run: ${ts} · ${location.name}, ${location.country} · ${date}`);
+  parts.push('');
+  parts.push(`**Polymarket URL:** ${polymarketUrl}`);
   parts.push('');
 
   // Model table
@@ -117,6 +121,7 @@ function snapshotPath(date: string): string {
  * @param corrected - Bias-corrected forecasts from all NWP models.
  * @param ensemble - Ensemble statistics computed by the voting system.
  * @param polymarketLines - Polymarket odds for the analysis table.
+ * @param polymarketUrl - The Polymarket event URL this snapshot was compared against.
  * @throws SnapshotWriteError if the file cannot be written.
  */
 export const appendForecastSnapshot = Effect.fn('appendForecastSnapshot')(function* (
@@ -125,9 +130,17 @@ export const appendForecastSnapshot = Effect.fn('appendForecastSnapshot')(functi
   corrected: CorrectedForecast[],
   ensemble: EnsembleResult,
   polymarketLines: PolymarketLine[],
+  polymarketUrl: string,
 ) {
   const filePath = snapshotPath(date);
-  const markdown = buildSnapshotMarkdown(location, date, corrected, ensemble, polymarketLines);
+  const markdown = buildSnapshotMarkdown(
+    location,
+    date,
+    corrected,
+    ensemble,
+    polymarketLines,
+    polymarketUrl,
+  );
 
   yield* Effect.tryPromise({
     try: () => mkdir(DOCS_DIR, { recursive: true }),
