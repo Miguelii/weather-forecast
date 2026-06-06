@@ -1,3 +1,5 @@
+> ⚠️ **Heads up:** this model had a high error rate, so I'm open-sourcing it for anyone who wants to improve it.
+
 # Polly Weather Forecast
 
 CLI tool that fetches weather forecasts from 4 major NWP (Numerical Weather Prediction) models,
