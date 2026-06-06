@@ -19,8 +19,8 @@ pnpm build
 
 ### 2. Run Model w/ bet opportunity
 
-node dist/index.js forecast --city "Singapore" --date "2026-05-28" --polymarket "https://polymarket.com/pt/event/highest-temperature-in-london-on-june-7-2026"
+node dist/index.js forecast --city "Singapore" --date "2026-06-07" --polymarket "https://polymarket.com/pt/event/highest-temperature-in-singapore-on-june-7-2026"
 
 ### 3. Run Model without bet opportunity
 
-node dist/index.js forecast --city "Singapore" --date "2026-05-28"
+node dist/index.js forecast --city "Singapore" --date "2026-06-07"
