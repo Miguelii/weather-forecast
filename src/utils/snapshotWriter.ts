@@ -1,10 +1,9 @@
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { Effect } from 'effect';
-import type { CorrectedForecast, EnsembleResult, Location, PolymarketLine } from '#types.js';
+import type { CorrectedForecast, EnsembleResult, Location } from '#types.js';
 import { SnapshotWriteError } from '#types.js';
 import { DOCS_DIR, MONTH_NAMES } from '#utils/constants.js';
-import { buildRecommendations, fmtEdge } from '#utils/display.js';
 
 /**
  * Builds a Markdown snapshot string for one forecast run.
@@ -13,7 +12,6 @@ import { buildRecommendations, fmtEdge } from '#utils/display.js';
  * @param date - Target date in `YYYY-MM-DD` format.
  * @param corrected - Bias-corrected forecasts from all NWP models.
  * @param ensemble - Ensemble statistics computed by the voting system.
- * @param polymarketLines - Polymarket odds to include in the analysis table.
  * @param polymarketUrl - The Polymarket event URL this snapshot was compared against.
  * @returns A Markdown string ready to be appended to the snapshot file.
  */
@@ -22,7 +20,6 @@ function buildSnapshotMarkdown(
   date: string,
   corrected: CorrectedForecast[],
   ensemble: EnsembleResult,
-  polymarketLines: PolymarketLine[],
   polymarketUrl: string,
 ): string {
   const ts = new Date().toISOString();
@@ -76,22 +73,6 @@ function buildSnapshotMarkdown(
     parts.push('');
   }
 
-  // Polymarket analysis table
-  if (polymarketLines.length) {
-    const recs = buildRecommendations(polymarketLines, ensemble.probabilities);
-    parts.push('| Threshold | Type | Market YES% | Model Est.% | Edge | Signal |');
-    parts.push('|-----------|------|-------------|-------------|------|--------|');
-    for (const r of recs) {
-      const line = polymarketLines.find((l) => l.threshold === r.threshold);
-      const kindLabel = line ? line.kind.toUpperCase() : '';
-      const modelProbStr = Number.isNaN(r.modelProb) ? 'N/A' : `${r.modelProb.toFixed(1)}`;
-      parts.push(
-        `| ${r.threshold}°C | ${kindLabel} | ${r.marketYesProb.toFixed(1)} | ${modelProbStr} | ${fmtEdge(r.edge)} | ${r.signal} |`,
-      );
-    }
-    parts.push('');
-  }
-
   parts.push('FINAL RESULT: ', '\n');
 
   return `${parts.join('\n')}\n`;
@@ -120,7 +101,6 @@ function snapshotPath(date: string): string {
  * @param date - Target date in `YYYY-MM-DD` format.
  * @param corrected - Bias-corrected forecasts from all NWP models.
  * @param ensemble - Ensemble statistics computed by the voting system.
- * @param polymarketLines - Polymarket odds for the analysis table.
  * @param polymarketUrl - The Polymarket event URL this snapshot was compared against.
  * @throws SnapshotWriteError if the file cannot be written.
  */
@@ -129,18 +109,10 @@ export const appendForecastSnapshot = Effect.fn('appendForecastSnapshot')(functi
   date: string,
   corrected: CorrectedForecast[],
   ensemble: EnsembleResult,
-  polymarketLines: PolymarketLine[],
   polymarketUrl: string,
 ) {
   const filePath = snapshotPath(date);
-  const markdown = buildSnapshotMarkdown(
-    location,
-    date,
-    corrected,
-    ensemble,
-    polymarketLines,
-    polymarketUrl,
-  );
+  const markdown = buildSnapshotMarkdown(location, date, corrected, ensemble, polymarketUrl);
 
   yield* Effect.tryPromise({
     try: () => mkdir(DOCS_DIR, { recursive: true }),

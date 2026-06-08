@@ -25,7 +25,6 @@ export const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 export const MAX_FORECAST_DAYS = 15;
 
 // ─── Polymarket ───────────────────────────────────────────────────────────────
-export const MIN_BET_EDGE_PERCENT = 5;
 export const POLYMARKET_GAMMA_URL = 'https://gamma-api.polymarket.com';
 export const POLYMARKET_EVENT_URL = 'https://polymarket.com/event';
 export const PREDICTS_DIR = resolve(currentDir, '../../predicts');

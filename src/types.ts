@@ -67,14 +67,6 @@ export interface PolymarketLine {
   noProb: number;
 }
 
-export interface BetRecommendation {
-  threshold: number;
-  modelProb: number;
-  marketYesProb: number;
-  edge: number;
-  signal: 'YES' | 'NO' | 'SKIP';
-}
-
 /** Options for a single city/date forecast run, shared by the `forecast` and `forecast-all` commands. */
 export interface ForecastRunOptions {
   city: string;

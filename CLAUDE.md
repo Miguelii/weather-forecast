@@ -42,7 +42,7 @@ src/
 │   └── polymarket.ts         # Fetches event + markets from Polymarket Gamma API (Effect)
 ├── utils/
 │   ├── constants.ts          # All project-wide constants (URLs, timeouts, models, paths, batch cities, month names)
-│   ├── display.ts            # Terminal output — tables, formatted results, Polymarket analysis
+│   ├── display.ts            # Terminal output — model table, ensemble summary, probability bars
 │   ├── geocoding.ts          # City name → lat/lon via Open-Meteo geocoding API (Effect)
 │   ├── parsePolymarket.ts    # Parses predicts/*.md odds files (Effect)
 │   ├── runOrExit.ts          # Runs an Effect and exits process on failure
@@ -111,8 +111,9 @@ node dist/index.js polymarket fetch \
 # Optional custom output path:
 node dist/index.js polymarket fetch --url "..." --output predicts/London-21-may.md
 
-# Compare model probabilities against the scraped Polymarket odds.
-# Thresholds are extracted automatically from the .md file (merged with any --threshold).
+# Feed scraped Polymarket buckets into the forecast as thresholds.
+# Thresholds are extracted automatically from the .md file (merged with any --threshold),
+# and the event URL is recorded in the snapshot.
 # --polymarket accepts a saved file path OR a live event URL (fetched + saved automatically):
 node dist/index.js forecast --city "London" --date "2026-05-21" \
   --polymarket predicts/highest-temperature-in-london-on-may-21-2026.md
@@ -185,21 +186,9 @@ one of **three kinds** — assigned automatically when scraping (`src/commands/p
 | `exact` | `"22°C"` (middle bucket)         | `max` falls in the `[X, X+1)` bucket |
 | `above` | `"28°C"` (last bucket)           | `max ≥ 28` |
 
-#### Model probability per kind
-`buildRecommendations()` in `src/utils/display.ts` computes the model's estimate as:
-
-| Kind    | Formula |
-|---------|---------|
-| `below` | `100 − probAbove(X)` |
-| `exact` | `probAbove(X−1) − probAbove(X)` *(needs consecutive integer thresholds)* |
-| `above` | `probAbove(X)` |
-
-#### Edge & signal logic
-- `edge = modelProb% − marketYesProb%`
-- `edge ≥ MIN_BET_EDGE_PERCENT` → **BET YES**
-- `edge ≤ −MIN_BET_EDGE_PERCENT` → **BET NO**
-- Otherwise → **SKIP**
-- "Best opportunity" = highest absolute edge among non-SKIP recommendations
+The scraped odds are parsed only to **extract the bucket thresholds**, which are merged into
+the voting system's `--threshold` list (and the Polymarket event URL is recorded in the
+snapshot). The model no longer computes per-bucket edge/signal recommendations.
 
 #### File format (`predicts/<slug>.md`)
 ```
@@ -380,8 +369,5 @@ Command actions must never be `async`. Use `runOrExit` from `src/utils/runOrExit
   back-testing yet.
 - `data/bias.json` uses the **resolved city name** (e.g. `"London"`, not `"london"`) as the key.
   The city name comes from the Open-Meteo geocoding API response.
-- Polymarket `exact` analysis assumes **consecutive integer thresholds**. If the scraped
-  thresholds are sparse (e.g. `22, 25, 28`), the EXACT formula falls back to `N/A` because
-  `probAbove(X−1)` isn't available.
 - `outcomePrices` from the Gamma API is a **JSON-encoded string**, not an array — both
   `parsePolymarket` (file → struct) and the fetch command (API → file) rely on this.

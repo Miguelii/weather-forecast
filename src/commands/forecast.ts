@@ -54,21 +54,14 @@ export const runCityForecast = Effect.fn('runCityForecast')(function* (opts: For
   const corrected = raw.map((f) => correctForecast(f, location.name, biasStore));
   const ensemble = yield* runVotingSystem(corrected, thresholds);
 
-  printForecastOutput(location, opts.date, corrected, ensemble, polymarketLines);
+  printForecastOutput(location, opts.date, corrected, ensemble);
 
   if (polymarketLines) {
     // Show the live event URL when given, otherwise rebuild the canonical one from city + date
     const polymarketUrl = opts.polymarket?.startsWith('http')
       ? opts.polymarket
       : buildPolymarketEventUrl(location.name, opts.date);
-    yield* appendForecastSnapshot(
-      location,
-      opts.date,
-      corrected,
-      ensemble,
-      polymarketLines,
-      polymarketUrl,
-    );
+    yield* appendForecastSnapshot(location, opts.date, corrected, ensemble, polymarketUrl);
   }
 });
 
