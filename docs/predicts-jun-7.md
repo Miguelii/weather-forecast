@@ -42,7 +42,7 @@ Probabilities — P(max temp > X)
 | 25°C | EXACT | 0.3 | 1.0 | +0.7% | SKIP |
 | 26°C | ABOVE | 0.2 | 0.0 | -0.2% | SKIP |
 
-FINAL RESULT: 
+FINAL RESULT: 19
 
 
 ---
@@ -89,7 +89,7 @@ Probabilities — P(max temp > X)
 | 27°C | EXACT | 0.1 | 0.0 | -0.1% | SKIP |
 | 28°C | ABOVE | 0.1 | 0.0 | -0.1% | SKIP |
 
-FINAL RESULT: 
+FINAL RESULT: 23
 
 
 ---
@@ -136,7 +136,7 @@ Probabilities — P(max temp > X)
 | 31°C | EXACT | 0.5 | 4.0 | +3.5% | SKIP |
 | 32°C | ABOVE | 0.2 | 1.0 | +0.8% | SKIP |
 
-FINAL RESULT: 
+FINAL RESULT: 26
 
 
 ---
@@ -183,7 +183,7 @@ Probabilities — P(max temp > X)
 | 33°C | EXACT | 2.6 | 16.0 | +13.4% | YES |
 | 34°C | ABOVE | 1.6 | 17.0 | +15.4% | YES |
 
-FINAL RESULT: 
+FINAL RESULT: 32
 
 
 ---
@@ -230,6 +230,6 @@ Probabilities — P(max temp > X)
 | 34°C | EXACT | 2.2 | 15.0 | +12.8% | YES |
 | 35°C | ABOVE | 0.3 | 2.0 | +1.7% | SKIP |
 
-FINAL RESULT: 
+FINAL RESULT: 31
 
 
