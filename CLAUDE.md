@@ -35,7 +35,8 @@ src/
 │   ├── bias.ts               # bias set/list command actions
 │   └── polymarket.ts         # buildPolymarketEventUrl (city+date → URL) + fetchPolymarketThresholds (URL → buckets)
 ├── bias/
-│   ├── store.ts              # Async read/write of data/bias.json (Effect)
+│   ├── bias.json             # Persisted bias corrections (read/written at runtime)
+│   ├── store.ts              # Async read/write of bias.json (Effect)
 │   └── apply.ts              # Applies bias correction to a raw forecast (pure)
 ├── fetchers/
 │   ├── openMeteo.ts          # Fetches from all models via Open-Meteo API (Effect)
@@ -45,14 +46,13 @@ src/
 │   ├── display.ts            # Terminal output — model table, ensemble summary, probability bars
 │   ├── geocoding.ts          # City name → lat/lon via Open-Meteo geocoding API (Effect)
 │   ├── runOrExit.ts          # Runs an Effect and exits process on failure
-│   ├── snapshotWriter.ts     # Appends forecast snapshots (incl. Polymarket URL) to docs/predicts-<month>-<day>.md (Effect)
+│   ├── snapshotWriter.ts     # Appends forecast snapshots (incl. Polymarket URL) to predicts/<month>-<day>.md (Effect)
 │   ├── stats.ts              # Pure math: mean, stddev, percentile, normalCDF
 │   └── validateDate.ts       # CLI date validation with warnings
 └── voting/
     └── voting-system.ts      # Ensemble voting: aggregates models into probability output (Effect)
 
-data/
-└── bias.json                 # Persisted bias corrections — DO NOT commit with real values
+predicts/                     # Daily forecast snapshots — one <month>-<day>.md file per date
 dist/                         # Compiled JS output — gitignored, never edit directly
 ```
 
@@ -145,7 +145,7 @@ pnpm run fmt:check    # Prettier check (useful in CI)
   `Effect.either` above).
 
 ### Bias Correction
-- Bias is stored per city (resolved name) and per model in `data/bias.json`
+- Bias is stored per city (resolved name) and per model in `src/bias/bias.json`
 - Formula: `corrected = raw - bias`
 - A positive bias means the model runs warm → correction shifts temperature down
 - The bias store is loaded **once** per CLI invocation (not once per model) to avoid redundant disk reads
@@ -340,7 +340,7 @@ Command actions must never be `async`. Use `runOrExit` from `src/utils/runOrExit
 - Models cover at most **15 days** ahead. The CLI warns if the requested date is out of range.
 - Bias corrections must be set manually via `bias set`. There is no automated historical
   back-testing yet.
-- `data/bias.json` uses the **resolved city name** (e.g. `"London"`, not `"london"`) as the key.
+- `src/bias/bias.json` uses the **resolved city name** (e.g. `"London"`, not `"london"`) as the key.
   The city name comes from the Open-Meteo geocoding API response.
 - Polymarket buckets are read live on every run (no caching). A city whose Polymarket event does
   not exist for the given date fails that city in the `forecast-all` summary.

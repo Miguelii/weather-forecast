@@ -18,7 +18,10 @@ export const MODELS: ModelDef[] = [
 
 // ─── Storage ──────────────────────────────────────────────────────────────────
 const currentDir = dirname(fileURLToPath(import.meta.url));
-export const BIAS_PATH = resolve(currentDir, '../../data/bias.json');
+// The bias store lives next to the bias logic in src/bias/. Compiled code runs from dist/, so we
+// step up out of dist/utils (../../) to the repo root, then into src/bias/ (also correct when run
+// directly from src/utils).
+export const BIAS_PATH = resolve(currentDir, '../../src/bias/bias.json');
 
 // ─── Validation ───────────────────────────────────────────────────────────────
 export const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -49,7 +52,8 @@ export const MONTH_NAMES_FULL = [
 ] as const;
 
 // ─── Snapshots ────────────────────────────────────────────────────────────────
-export const DOCS_DIR = resolve(currentDir, '../../docs');
+// Daily forecast snapshots are written here, one Markdown file per date.
+export const PREDICTS_DIR = resolve(currentDir, '../../predicts');
 export const MONTH_NAMES = [
   'jan',
   'feb',

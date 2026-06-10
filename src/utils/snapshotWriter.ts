@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { Effect } from 'effect';
 import type { CorrectedForecast, EnsembleResult, Location } from '#types.js';
 import { SnapshotWriteError } from '#types/errors.js';
-import { DOCS_DIR, MONTH_NAMES } from '#utils/constants.js';
+import { PREDICTS_DIR, MONTH_NAMES } from '#utils/constants.js';
 
 /**
  * Builds a Markdown snapshot string for one forecast run.
@@ -82,19 +82,19 @@ function buildSnapshotMarkdown(
  * Derives the snapshot file path from a date string.
  *
  * @example
- * snapshotPath('2026-05-22') // → '/path/to/docs/predicts-may-22.md'
+ * snapshotPath('2026-05-22') // → '/path/to/predicts/may-22.md'
  */
 function snapshotPath(date: string): string {
   const [, monthStr, dayStr] = date.split('-');
   const monthIndex = Number.parseInt(monthStr, 10) - 1;
   const day = Number.parseInt(dayStr, 10);
-  return join(DOCS_DIR, `predicts-${MONTH_NAMES[monthIndex]}-${day}.md`);
+  return join(PREDICTS_DIR, `${MONTH_NAMES[monthIndex]}-${day}.md`);
 }
 
 /**
- * Appends a forecast snapshot to the daily `docs/predicts-<month>-<day>.md` file.
+ * Appends a forecast snapshot to the daily `predicts/<month>-<day>.md` file.
  *
- * Creates the file (and `docs/` directory) if they do not yet exist.
+ * Creates the file (and `predicts/` directory) if they do not yet exist.
  * Each call appends a new dated section so multiple runs accumulate in one file.
  *
  * @param location - Resolved city location.
@@ -115,8 +115,9 @@ export const appendForecastSnapshot = Effect.fn('appendForecastSnapshot')(functi
   const markdown = buildSnapshotMarkdown(location, date, corrected, ensemble, polymarketUrl);
 
   yield* Effect.tryPromise({
-    try: () => mkdir(DOCS_DIR, { recursive: true }),
-    catch: (err) => new SnapshotWriteError({ cause: `Could not create docs dir: ${String(err)}` }),
+    try: () => mkdir(PREDICTS_DIR, { recursive: true }),
+    catch: (err) =>
+      new SnapshotWriteError({ cause: `Could not create predicts dir: ${String(err)}` }),
   });
 
   const existing = yield* Effect.either(
