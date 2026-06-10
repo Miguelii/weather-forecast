@@ -25,8 +25,6 @@ function buildSnapshotMarkdown(
   const ts = new Date().toISOString();
   const parts: string[] = [];
 
-  parts.push('---');
-  parts.push('');
   parts.push(`## Run: ${ts} · ${location.name}, ${location.country} · ${date}`);
   parts.push('');
   parts.push(`**Polymarket URL:** ${polymarketUrl}`);
@@ -57,18 +55,24 @@ function buildSnapshotMarkdown(
   parts.push(
     `**Ensemble** — Mean: ${ensemble.maxMean}°C | σ: ±${ensemble.maxSpread}°C | Models: ${ensemble.modelsUsed}/${ensemble.modelsUsed + ensemble.modelsFailed}`,
   );
+
+  parts.push('');
+
   parts.push(
     `**Percentiles** — P10: ${p10}°C | P25: ${p25}°C | P50: ${p50}°C | P75: ${p75}°C | P90: ${p90}°C`,
   );
+
   parts.push('');
 
-  // Probability bars — kept in the same visual format as the console output
+  // Probabilities — Markdown table so it renders cleanly in any .md viewer
   if (ensemble.probabilities.length) {
-    parts.push('Probabilities — P(max temp > X)');
-    parts.push('─────────────────────────────────────────────────────');
+    parts.push('**Probabilities — P(max temp > X)**');
+    parts.push('');
+    parts.push('| Threshold | Probability | Distribution |');
+    parts.push('|:---------:|------------:|:-------------|');
     for (const { threshold, probAbove } of ensemble.probabilities) {
       const bar = '█'.repeat(Math.round(probAbove / 5)).padEnd(20, '░');
-      parts.push(`  P(max > ${threshold}°C):  ${bar} ${probAbove}%`);
+      parts.push(`| > ${threshold}°C | ${probAbove}% | \`${bar}\` |`);
     }
     parts.push('');
   }
@@ -127,9 +131,12 @@ export const appendForecastSnapshot = Effect.fn('appendForecastSnapshot')(functi
     }),
   );
   const prev = existing._tag === 'Right' ? existing.right : '';
+  // Separate runs with a horizontal rule, but never let the file start with `---`: a leading
+  // `---` is parsed as YAML frontmatter by Markdown viewers, which then choke on the run content.
+  const divider = prev ? '---\n\n' : '';
 
   yield* Effect.tryPromise({
-    try: () => writeFile(filePath, prev + markdown, 'utf8'),
+    try: () => writeFile(filePath, prev + divider + markdown, 'utf8'),
     catch: (err) => new SnapshotWriteError({ cause: `Could not write snapshot: ${String(err)}` }),
   });
 
