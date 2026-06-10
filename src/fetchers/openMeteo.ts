@@ -1,6 +1,6 @@
 import { Effect } from 'effect';
 import type { ModelDef, ModelId, RawForecast } from '#types.js';
-import { FetchError } from '#types.js';
+import { FetchError } from '#types/errors.js';
 import { FORECAST_URL, MODELS } from '#utils/constants.js';
 
 interface OpenMeteoResponse {

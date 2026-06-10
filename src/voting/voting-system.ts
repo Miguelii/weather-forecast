@@ -1,7 +1,7 @@
 import { Effect } from 'effect';
 import { mean, stddev, percentile, normalCDF } from '#utils/stats.js';
 import type { CorrectedForecast, EnsembleResult } from '#types.js';
-import { EnsembleError } from '#types.js';
+import { EnsembleError } from '#types/errors.js';
 
 /**
  * Pure computation of ensemble statistics from a set of corrected model forecasts.

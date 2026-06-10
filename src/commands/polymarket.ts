@@ -1,5 +1,5 @@
 import { Effect } from 'effect';
-import { PolymarketFetchError } from '#types.js';
+import { PolymarketFetchError } from '#types/errors.js';
 import { fetchPolymarketEvent } from '#fetchers/polymarket.js';
 import { MONTH_NAMES_FULL, POLYMARKET_EVENT_URL } from '#utils/constants.js';
 

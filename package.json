@@ -18,8 +18,12 @@
   "type": "module",
   "imports": {
     "#types.js": {
-      "types": "./src/types.ts",
-      "default": "./dist/types.js"
+      "types": "./src/types/index.ts",
+      "default": "./dist/types/index.js"
+    },
+    "#types/*.js": {
+      "types": "./src/types/*.ts",
+      "default": "./dist/types/*.js"
     },
     "#utils/*.js": {
       "types": "./src/utils/*.ts",

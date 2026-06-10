@@ -1,6 +1,6 @@
 import { Effect } from 'effect';
 import type { Location } from '#types.js';
-import { GeocodingError } from '#types.js';
+import { GeocodingError } from '#types/errors.js';
 import { GEO_URL } from '#utils/constants.js';
 
 interface GeoResult {

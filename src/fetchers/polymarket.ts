@@ -1,5 +1,5 @@
 import { Effect } from 'effect';
-import { PolymarketFetchError } from '#types.js';
+import { PolymarketFetchError } from '#types/errors.js';
 import type { PolymarketEvent } from '#types.js';
 import { POLYMARKET_GAMMA_URL } from '#utils/constants.js';
 

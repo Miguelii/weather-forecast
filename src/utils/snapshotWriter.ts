@@ -2,7 +2,7 @@ import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { Effect } from 'effect';
 import type { CorrectedForecast, EnsembleResult, Location } from '#types.js';
-import { SnapshotWriteError } from '#types.js';
+import { SnapshotWriteError } from '#types/errors.js';
 import { DOCS_DIR, MONTH_NAMES } from '#utils/constants.js';
 
 /**

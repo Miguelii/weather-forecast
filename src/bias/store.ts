@@ -1,7 +1,7 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { Effect } from 'effect';
 import type { BiasStore, ModelId } from '#types.js';
-import { BiasStoreError } from '#types.js';
+import { BiasStoreError } from '#types/errors.js';
 import { BIAS_PATH } from '#utils/constants.js';
 
 /**
