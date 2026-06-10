@@ -28,15 +28,9 @@ node dist/index.js forecast-all --date "2026-06-07"
 
 node dist/index.js forecast-all --date "2026-06-07" --cities "London,Paris"
 
-## Other commands:
-
-### Run Model w/ bet opportunity for a single city
-
-node dist/index.js forecast --city "Singapore" --date "2026-06-07" --polymarket "https://polymarket.com/pt/event/highest-temperature-in-singapore-on-june-7-2026"
-
-### Run Model without bet opportunity for a single city
-
-node dist/index.js forecast --city "Singapore" --date "2026-06-07"
+For each city, the Polymarket event URL is built automatically from the city + date. The event's
+temperature buckets are fetched (in memory) and used as the probability thresholds shown as
+`P(max > X)`, and the event URL is recorded in the daily snapshot.
 
 ## Tech Stack
 
@@ -49,8 +43,8 @@ node dist/index.js forecast --city "Singapore" --date "2026-06-07"
 
 ### CLI & Output
 
-- **[Commander](https://github.com/tj/commander.js)** — command parsing (`forecast`, `forecast-all`, `bias`, `polymarket`)
-- **[cli-table3](https://github.com/cli-table/cli-table3)** — formatted terminal tables for the forecast and Polymarket analysis
+- **[Commander](https://github.com/tj/commander.js)** — command parsing (`forecast-all`, `bias`)
+- **[cli-table3](https://github.com/cli-table/cli-table3)** — formatted terminal tables for the forecast output
 
 ### Tooling
 
@@ -62,5 +56,6 @@ node dist/index.js forecast --city "Singapore" --date "2026-06-07"
 
 - **[Open-Meteo](https://open-meteo.com)** — geocoding (city → lat/lon) and weather forecasts from 4 NWP models:
   ECMWF IFS, NOAA GFS, DWD ICON, and ECCC GEM
-- **[Polymarket Gamma API](https://gamma-api.polymarket.com)** — live market odds per temperature bucket,
-  used to compute the edge between the model's probabilities and the market price
+- **[Polymarket Gamma API](https://gamma-api.polymarket.com)** — live market odds per temperature bucket;
+  the buckets are extracted and used as the probability thresholds (`P(max > X)`) the model evaluates,
+  and the event URL is recorded in the daily snapshot

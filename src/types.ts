@@ -59,20 +59,10 @@ export interface EnsembleResult {
 
 export type BiasStore = Record<string, Partial<Record<ModelId, number>>>;
 
-export interface PolymarketLine {
-  threshold: number;
-  /** Semantics of this market bucket. */
-  kind: 'below' | 'exact' | 'above';
-  yesProb: number;
-  noProb: number;
-}
-
-/** Options for a single city/date forecast run, shared by the `forecast` and `forecast-all` commands. */
+/** Options for a single city/date forecast run, used by the `forecast-all` command. */
 export interface ForecastRunOptions {
   city: string;
   date: string;
-  threshold?: string;
-  polymarket?: string;
 }
 
 // ─── Typed errors ─────────────────────────────────────────────────────────────
@@ -99,14 +89,6 @@ export class BiasStoreError extends Data.TaggedError('BiasStoreError')<{ cause: 
 }
 
 export class EnsembleError extends Data.TaggedError('EnsembleError')<{ cause: string }> {
-  get message(): string {
-    return this.cause;
-  }
-}
-
-export class PolymarketParseError extends Data.TaggedError('PolymarketParseError')<{
-  cause: string;
-}> {
   get message(): string {
     return this.cause;
   }

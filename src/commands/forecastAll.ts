@@ -1,7 +1,6 @@
 import type { Command } from 'commander';
 import { Effect } from 'effect';
 import { runCityForecast } from '#commands/forecast.js';
-import { buildPolymarketEventUrl } from '#commands/polymarket.js';
 import { BATCH_CITIES } from '#utils/constants.js';
 import { runOrExit } from '#utils/runOrExit.js';
 import { validateDate } from '#utils/validateDate.js';
@@ -44,10 +43,7 @@ export function registerForecastAllCommand(cli: Command): void {
           for (const city of cities) {
             process.stdout.write(`\n${SEPARATOR}\n=== ${city} — ${opts.date}\n${SEPARATOR}\n`);
 
-            const url = buildPolymarketEventUrl(city, opts.date);
-            const result = yield* Effect.either(
-              runCityForecast({ city, date: opts.date, polymarket: url }),
-            );
+            const result = yield* Effect.either(runCityForecast({ city, date: opts.date }));
 
             if (result._tag === 'Left') {
               failures.push({ city, error: result.left.message });
