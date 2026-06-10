@@ -28,20 +28,6 @@ Probabilities — P(max temp > X)
   P(max > 25°C):  ░░░░░░░░░░░░░░░░░░░░ 0%
   P(max > 26°C):  ░░░░░░░░░░░░░░░░░░░░ 0%
 
-| Threshold | Type | Market YES% | Model Est.% | Edge | Signal |
-|-----------|------|-------------|-------------|------|--------|
-| 16°C | BELOW | 0.3 | 0.0 | -0.3% | SKIP |
-| 17°C | EXACT | 0.5 | 0.0 | -0.5% | SKIP |
-| 18°C | EXACT | 2.5 | 0.0 | -2.5% | SKIP |
-| 19°C | EXACT | 18.5 | 4.0 | -14.5% | NO |
-| 20°C | EXACT | 34.5 | 13.0 | -21.5% | NO |
-| 21°C | EXACT | 37.0 | 27.0 | -10.0% | NO |
-| 22°C | EXACT | 9.0 | 30.0 | +21.0% | YES |
-| 23°C | EXACT | 1.7 | 19.0 | +17.3% | YES |
-| 24°C | EXACT | 0.4 | 6.0 | +5.6% | YES |
-| 25°C | EXACT | 0.3 | 1.0 | +0.7% | SKIP |
-| 26°C | ABOVE | 0.2 | 0.0 | -0.2% | SKIP |
-
 FINAL RESULT: 19
 
 
@@ -74,20 +60,6 @@ Probabilities — P(max temp > X)
   P(max > 26°C):  ░░░░░░░░░░░░░░░░░░░░ 0%
   P(max > 27°C):  ░░░░░░░░░░░░░░░░░░░░ 0%
   P(max > 28°C):  ░░░░░░░░░░░░░░░░░░░░ 0%
-
-| Threshold | Type | Market YES% | Model Est.% | Edge | Signal |
-|-----------|------|-------------|-------------|------|--------|
-| 18°C | BELOW | 0.4 | 0.0 | -0.4% | SKIP |
-| 19°C | EXACT | 0.3 | 0.0 | -0.3% | SKIP |
-| 20°C | EXACT | 3.5 | 1.0 | -2.5% | SKIP |
-| 21°C | EXACT | 12.5 | 4.0 | -8.5% | NO |
-| 22°C | EXACT | 43.5 | 18.0 | -25.5% | NO |
-| 23°C | EXACT | 32.5 | 31.0 | -1.5% | SKIP |
-| 24°C | EXACT | 10.5 | 29.0 | +18.5% | YES |
-| 25°C | EXACT | 1.0 | 14.0 | +13.0% | YES |
-| 26°C | EXACT | 0.3 | 3.0 | +2.7% | SKIP |
-| 27°C | EXACT | 0.1 | 0.0 | -0.1% | SKIP |
-| 28°C | ABOVE | 0.1 | 0.0 | -0.1% | SKIP |
 
 FINAL RESULT: 23
 
@@ -122,20 +94,6 @@ Probabilities — P(max temp > X)
   P(max > 31°C):  █░░░░░░░░░░░░░░░░░░░ 3%
   P(max > 32°C):  ░░░░░░░░░░░░░░░░░░░░ 1%
 
-| Threshold | Type | Market YES% | Model Est.% | Edge | Signal |
-|-----------|------|-------------|-------------|------|--------|
-| 22°C | BELOW | 0.2 | 1.0 | +0.8% | SKIP |
-| 23°C | EXACT | 0.2 | 1.0 | +0.8% | SKIP |
-| 24°C | EXACT | 1.8 | 5.0 | +3.2% | SKIP |
-| 25°C | EXACT | 11.5 | 9.0 | -2.5% | SKIP |
-| 26°C | EXACT | 27.0 | 14.0 | -13.0% | NO |
-| 27°C | EXACT | 33.5 | 19.0 | -14.5% | NO |
-| 28°C | EXACT | 22.5 | 19.0 | -3.5% | SKIP |
-| 29°C | EXACT | 5.4 | 15.0 | +9.6% | YES |
-| 30°C | EXACT | 1.4 | 10.0 | +8.6% | YES |
-| 31°C | EXACT | 0.5 | 4.0 | +3.5% | SKIP |
-| 32°C | ABOVE | 0.2 | 1.0 | +0.8% | SKIP |
-
 FINAL RESULT: 26
 
 
@@ -169,20 +127,6 @@ Probabilities — P(max temp > X)
   P(max > 33°C):  ██████░░░░░░░░░░░░░░ 31%
   P(max > 34°C):  ███░░░░░░░░░░░░░░░░░ 17%
 
-| Threshold | Type | Market YES% | Model Est.% | Edge | Signal |
-|-----------|------|-------------|-------------|------|--------|
-| 24°C | BELOW | 0.1 | 0.0 | -0.1% | SKIP |
-| 25°C | EXACT | 0.1 | 0.0 | -0.1% | SKIP |
-| 26°C | EXACT | 0.1 | 1.0 | +0.9% | SKIP |
-| 27°C | EXACT | 1.5 | 1.0 | -0.5% | SKIP |
-| 28°C | EXACT | 7.2 | 3.0 | -4.2% | SKIP |
-| 29°C | EXACT | 18.0 | 6.0 | -12.0% | NO |
-| 30°C | EXACT | 34.5 | 10.0 | -24.5% | NO |
-| 31°C | EXACT | 33.5 | 15.0 | -18.5% | NO |
-| 32°C | EXACT | 12.5 | 17.0 | +4.5% | SKIP |
-| 33°C | EXACT | 2.6 | 16.0 | +13.4% | YES |
-| 34°C | ABOVE | 1.6 | 17.0 | +15.4% | YES |
-
 FINAL RESULT: 32
 
 
@@ -215,20 +159,6 @@ Probabilities — P(max temp > X)
   P(max > 33°C):  █████░░░░░░░░░░░░░░░ 23%
   P(max > 34°C):  ██░░░░░░░░░░░░░░░░░░ 8%
   P(max > 35°C):  ░░░░░░░░░░░░░░░░░░░░ 2%
-
-| Threshold | Type | Market YES% | Model Est.% | Edge | Signal |
-|-----------|------|-------------|-------------|------|--------|
-| 25°C | BELOW | 0.1 | 0.0 | -0.1% | SKIP |
-| 26°C | EXACT | 0.1 | 0.0 | -0.1% | SKIP |
-| 27°C | EXACT | 0.1 | 0.0 | -0.1% | SKIP |
-| 28°C | EXACT | 0.2 | 0.0 | -0.2% | SKIP |
-| 29°C | EXACT | 1.8 | 3.0 | +1.2% | SKIP |
-| 30°C | EXACT | 13.5 | 7.0 | -6.5% | NO |
-| 31°C | EXACT | 28.0 | 17.0 | -11.0% | NO |
-| 32°C | EXACT | 39.5 | 26.0 | -13.5% | NO |
-| 33°C | EXACT | 18.5 | 24.0 | +5.5% | YES |
-| 34°C | EXACT | 2.2 | 15.0 | +12.8% | YES |
-| 35°C | ABOVE | 0.3 | 2.0 | +1.7% | SKIP |
 
 FINAL RESULT: 31
 
