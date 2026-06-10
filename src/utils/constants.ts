@@ -27,7 +27,6 @@ export const MAX_FORECAST_DAYS = 15;
 // ─── Polymarket ───────────────────────────────────────────────────────────────
 export const POLYMARKET_GAMMA_URL = 'https://gamma-api.polymarket.com';
 export const POLYMARKET_EVENT_URL = 'https://polymarket.com/event';
-export const PREDICTS_DIR = resolve(currentDir, '../../predicts');
 
 // ─── Batch forecast ─────────────────────────────────────────────────────────────
 // Default cities for the `forecast-all` command (overridable via --cities).

@@ -30,10 +30,10 @@ src/
 ├── index.ts                  # CLI entry point — registers commands and calls cli.parse()
 ├── types.ts                  # All shared interfaces, types, and typed error classes
 ├── commands/
-│   ├── forecast.ts           # forecast command + reusable runCityForecast Effect (--polymarket: file or URL)
+│   ├── forecast.ts           # reusable runCityForecast Effect (resolve → poly buckets → models → vote → snapshot)
 │   ├── forecastAll.ts        # forecast-all — runs runCityForecast for several cities on one date
 │   ├── bias.ts               # bias set/list command actions
-│   └── polymarket.ts         # polymarket fetch + buildPolymarketEventUrl (city+date → event URL)
+│   └── polymarket.ts         # buildPolymarketEventUrl (city+date → URL) + fetchPolymarketThresholds (URL → buckets)
 ├── bias/
 │   ├── store.ts              # Async read/write of data/bias.json (Effect)
 │   └── apply.ts              # Applies bias correction to a raw forecast (pure)
@@ -44,7 +44,6 @@ src/
 │   ├── constants.ts          # All project-wide constants (URLs, timeouts, models, paths, batch cities, month names)
 │   ├── display.ts            # Terminal output — model table, ensemble summary, probability bars
 │   ├── geocoding.ts          # City name → lat/lon via Open-Meteo geocoding API (Effect)
-│   ├── parsePolymarket.ts    # Parses predicts/*.md odds files (Effect)
 │   ├── runOrExit.ts          # Runs an Effect and exits process on failure
 │   ├── snapshotWriter.ts     # Appends forecast snapshots (incl. Polymarket URL) to docs/predicts-<month>-<day>.md (Effect)
 │   ├── stats.ts              # Pure math: mean, stddev, percentile, normalCDF
@@ -54,7 +53,6 @@ src/
 
 data/
 └── bias.json                 # Persisted bias corrections — DO NOT commit with real values
-predicts/                     # Scraped Polymarket odds — one .md file per event (see format below)
 dist/                         # Compiled JS output — gitignored, never edit directly
 ```
 
@@ -88,44 +86,27 @@ dist/                         # Compiled JS output — gitignored, never edit di
   (e.g. `highest-temperature-in-london-on-may-21-2026`).
 - Response is an array of events; each event has a nested `markets` array — one entry per
   temperature bucket.
-- Each market exposes `groupItemTitle` (e.g. `"22°C"` or `"18°C or below"`) and
-  `outcomePrices`, which is a **JSON-encoded string** like `"[\"0.43\", \"0.57\"]"`
-  containing `[yesPrice, noPrice]` in `0–1` format. Always `JSON.parse` before using.
+- Each market exposes `groupItemTitle` (e.g. `"22°C"` or `"18°C or below"`). Only its leading
+  numeric value is read — it becomes a bucket temperature / probability threshold. (Markets also
+  carry `outcomePrices`, but the model no longer reads the live odds.)
 
 ---
 
 ## CLI Commands
 
 ```bash
-# Run ensemble forecast
-node dist/index.js forecast --city "London" --date "2026-05-20"
-node dist/index.js forecast --city "London" --date "2026-05-20" --threshold "18,20,22"
-
-# Manage bias corrections
-node dist/index.js bias set --city "London" --model ifs --value -1.5
-node dist/index.js bias list
-
-# Scrape Polymarket odds for an event → predicts/<slug>.md
-node dist/index.js polymarket fetch \
-  --url "https://polymarket.com/event/highest-temperature-in-london-on-may-21-2026"
-# Optional custom output path:
-node dist/index.js polymarket fetch --url "..." --output predicts/London-21-may.md
-
-# Feed scraped Polymarket buckets into the forecast as thresholds.
-# Thresholds are extracted automatically from the .md file (merged with any --threshold),
-# and the event URL is recorded in the snapshot.
-# --polymarket accepts a saved file path OR a live event URL (fetched + saved automatically):
-node dist/index.js forecast --city "London" --date "2026-05-21" \
-  --polymarket predicts/highest-temperature-in-london-on-may-21-2026.md
-node dist/index.js forecast --city "London" --date "2026-05-21" \
-  --polymarket "https://polymarket.com/event/highest-temperature-in-london-on-may-21-2026"
-
-# Run forecast + Polymarket comparison for several cities on one date.
-# The Polymarket event URL is built automatically from city + date.
+# Run ensemble forecast + Polymarket comparison for several cities on one date.
+# For each city the Polymarket event URL is built automatically from city + date; its temperature
+# buckets are fetched (in memory) and used as the probability thresholds, and the URL is recorded
+# in the snapshot.
 # Defaults to the 5 built-in cities (BATCH_CITIES: London, Paris, Beijing, Shenzhen, Singapore).
 node dist/index.js forecast-all --date "2026-06-07"
 # Override the city list (runs ONLY these, replacing the default):
 node dist/index.js forecast-all --date "2026-06-07" --cities "London,Paris"
+
+# Manage bias corrections
+node dist/index.js bias set --city "London" --model ifs --value -1.5
+node dist/index.js bias list
 ```
 
 ### Development Scripts
@@ -147,17 +128,21 @@ pnpm run fmt:check    # Prettier check (useful in CI)
 
 ## Key Architecture Decisions
 
-### Forecast Core (single vs. batch)
+### Forecast Core
 - `runCityForecast` in `src/commands/forecast.ts` is the reusable Effect that runs a full
-  forecast for **one** city/date (resolve city → fetch models → bias → vote → print → snapshot).
-  Both the `forecast` and `forecast-all` commands call it — keep all forecast logic here.
+  forecast for **one** city/date (resolve city → fetch Polymarket buckets → fetch models → bias →
+  vote → print → snapshot). The `forecast-all` command calls it once per city — keep all forecast
+  logic here. There is no single-city `forecast` command; `forecast-all` is the only entry point.
 - `forecast-all` in `src/commands/forecastAll.ts` iterates cities **sequentially** (`for…of` +
   `yield*`), not in parallel: parallel runs would interleave stdout and race on the read-modify-write
   of the shared daily snapshot file. Each city is wrapped in `Effect.either` so one failure
   (e.g. no Polymarket event) is reported in the summary without aborting the rest.
-- The Polymarket event URL for each city is built by `buildPolymarketEventUrl(city, date)` in
-  `src/commands/polymarket.ts` (slug: `highest-temperature-in-<city>-on-<full-month>-<day>-<year>`,
-  using `MONTH_NAMES_FULL`). `forecast --polymarket` accepts that URL or a saved file path.
+- The Polymarket event URL for each city is built **inside** `runCityForecast` by
+  `buildPolymarketEventUrl(resolvedName, date)` in `src/commands/polymarket.ts` (slug:
+  `highest-temperature-in-<city>-on-<full-month>-<day>-<year>`, using `MONTH_NAMES_FULL`).
+  `fetchPolymarketThresholds(url)` then fetches the event and returns its bucket temperatures
+  **in memory** — nothing is written to disk. A missing event fails the city (caught by the
+  `Effect.either` above).
 
 ### Bias Correction
 - Bias is stored per city (resolved name) and per model in `data/bias.json`
@@ -177,27 +162,15 @@ pnpm run fmt:check    # Prettier check (useful in CI)
 
 ### Polymarket Analysis
 
-Polymarket weather events are split into discrete temperature buckets. Each market belongs to
-one of **three kinds** — assigned automatically when scraping (`src/commands/polymarket.ts`):
+Polymarket weather events are split into discrete temperature buckets (one `market` per bucket).
+The model uses Polymarket **only to discover which temperatures to evaluate**: it builds the
+event URL from city + date, fetches the event, and parses the leading number of each
+`groupItemTitle` into a bucket temperature. Those temperatures become the voting system's
+probability thresholds (`P(max > X)`), and the event URL is recorded in the snapshot.
 
-| Kind    | `groupItemTitle` example | Wins YES when |
-|---------|--------------------------|---------------|
-| `below` | `"18°C or below"` (first bucket) | `max ≤ 18` |
-| `exact` | `"22°C"` (middle bucket)         | `max` falls in the `[X, X+1)` bucket |
-| `above` | `"28°C"` (last bucket)           | `max ≥ 28` |
-
-The scraped odds are parsed only to **extract the bucket thresholds**, which are merged into
-the voting system's `--threshold` list (and the Polymarket event URL is recorded in the
-snapshot). The model no longer computes per-bucket edge/signal recommendations.
-
-#### File format (`predicts/<slug>.md`)
-```
-18 | BELOW | YES 0.2 | NO 99.9
-22 | EXACT | YES 25.5 | NO 74.5
-28 | ABOVE | YES 0.1 | NO 100
-```
-The legacy format `22 | YES 27 | NO 74` (no kind marker) is still parsed for backward
-compatibility — those lines default to `kind='above'`.
+This happens entirely in memory (`fetchPolymarketThresholds` in `src/commands/polymarket.ts`) —
+no odds files are written or read, and the live YES/NO prices are not consumed. The model does
+not compute per-bucket edge/signal recommendations.
 
 ---
 
@@ -213,7 +186,7 @@ compatibility — those lines default to `kind='above'`.
 - Prefer type guards over `as` casts where possible
 - All exported functions must have explicit return types
 - All shared types live in `src/types.ts` — do not define inline object types that are reused across files
-  (e.g. `ForecastRunOptions`, shared by the `forecast` and `forecast-all` commands)
+  (e.g. `ForecastRunOptions`, used by the `forecast-all` command)
 - Internal modules are imported via the `#` **subpath aliases** declared in `package.json` → `imports`,
   not relative paths: `#types.js`, `#utils/*.js`, `#fetchers/*.js`, `#bias/*.js`, `#voting/*.js`,
   `#commands/*.js`. Example: `import { runCityForecast } from '#commands/forecast.js'`
@@ -369,5 +342,5 @@ Command actions must never be `async`. Use `runOrExit` from `src/utils/runOrExit
   back-testing yet.
 - `data/bias.json` uses the **resolved city name** (e.g. `"London"`, not `"london"`) as the key.
   The city name comes from the Open-Meteo geocoding API response.
-- `outcomePrices` from the Gamma API is a **JSON-encoded string**, not an array — both
-  `parsePolymarket` (file → struct) and the fetch command (API → file) rely on this.
+- Polymarket buckets are read live on every run (no caching). A city whose Polymarket event does
+  not exist for the given date fails that city in the `forecast-all` summary.
