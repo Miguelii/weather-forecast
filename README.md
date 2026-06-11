@@ -1,6 +1,6 @@
 > ⚠️ **Heads up:** this model had a high error rate, so I'm open-sourcing it for anyone who wants to improve it.
 
-# Polly Weather Forecast
+# Poly Weather Forecast - CLI tool
 
 CLI tool that fetches weather forecasts from 4 major NWP (Numerical Weather Prediction) models,
 applies per-model bias correction, and runs an ensemble voting system to compute probability
