@@ -1,4 +1,4 @@
-> ⚠️ **Heads up:** this model had a high error rate, so I'm open-sourcing it for anyone who wants to improve it.
+> ⚠️ **Heads up:** got tired of betting in weather, so I'm open-sourcing this model for anyone who wants to improve it.
 
 # Poly Weather Forecast - CLI tool
 
