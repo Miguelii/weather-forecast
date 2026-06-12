@@ -1,21 +1,21 @@
 {
   "London": {
-    "ifs": -2.5,
-    "gfs": -2.5,
-    "icon": -1,
+    "ifs": -1.6,
+    "gfs": -0.2,
+    "icon": 0,
     "gem": -1
   },
   "Paris": {
-    "ifs": -2.5,
-    "gfs": -1,
+    "ifs": -1.7,
+    "gfs": 0.4,
     "icon": -0.2,
     "gem": -0.1
   },
   "Beijing": {
-    "ifs": -1.6,
-    "gfs": 0.7,
-    "icon": -0.6,
-    "gem": 0.3
+    "ifs": -1,
+    "gfs": 2,
+    "icon": 0,
+    "gem": 0
   },
   "Shenzhen": {
     "ifs": -1.5,
@@ -23,7 +23,8 @@
     "gem": -1
   },
   "Singapore": {
-    "gfs": -1.5,
-    "icon": -1
+    "gfs": -0.6,
+    "icon": 0.5,
+    "gem": 1.3
   }
 }
