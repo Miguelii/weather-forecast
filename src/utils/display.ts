@@ -1,8 +1,17 @@
 import Table from 'cli-table3';
-import type { BiasStore, CorrectedForecast, EnsembleResult, Location } from '#types.js';
+import type {
+  BiasStore,
+  CorrectedForecast,
+  DayConditions,
+  EnsembleResult,
+  Location,
+} from '#types.js';
 
 /** Formats a nullable temperature value for table display (e.g. `"22°C"` or `"n/a"`). */
 const fmt = (v: number | null): string => (v !== null ? `${v}°C` : 'n/a');
+
+/** Formats a nullable numeric metric with a unit suffix (e.g. `"45%"` or `"n/a"`). */
+const fmtUnit = (v: number | null, unit: string): string => (v !== null ? `${v}${unit}` : 'n/a');
 
 /** Formats a bias value with explicit sign for table display (e.g. `"+1.5"` or `"-0.5"`). */
 const fmtBias = (b: number): string => {
@@ -11,19 +20,21 @@ const fmtBias = (b: number): string => {
 };
 
 /**
- * Prints the full forecast report to stdout: model table, ensemble summary, percentile
- * table, and probability bars.
+ * Prints the full forecast report to stdout: model table, ensemble summary, regime/conditions,
+ * percentile table, and probability bars.
  *
  * @param location - Resolved city location with coordinates and display name.
  * @param date - Target date string in `YYYY-MM-DD` format.
  * @param corrected - Bias-corrected forecasts from all NWP models.
  * @param ensemble - Ensemble statistics computed by the voting system.
+ * @param conditions - Summarised atmospheric conditions, or null if unavailable.
  */
 export function printForecastOutput(
   location: Location,
   date: string,
   corrected: CorrectedForecast[],
   ensemble: EnsembleResult,
+  conditions: DayConditions | null,
 ): void {
   console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   console.log(' Weather Ensemble Forecast');
@@ -62,8 +73,14 @@ export function printForecastOutput(
     console.log(` Forecast min:  ${ensemble.minMean}°C`);
   }
   console.log(
-    ` Models used: ${ensemble.modelsUsed}/${ensemble.modelsUsed + ensemble.modelsFailed}${ensemble.modelsFailed ? `  (${ensemble.modelsFailed} failed)` : ''}`,
+    ` Models used: ${ensemble.modelsUsed}/${ensemble.modelsUsed + ensemble.modelsFailed}${ensemble.modelsFailed ? `  (${ensemble.modelsFailed} failed)` : ''}${ensemble.membersUsed ? `  |  members: ${ensemble.membersUsed}` : ''}`,
   );
+  console.log(` Regime: ${ensemble.regime.kind.toUpperCase()} — ${ensemble.regime.reason}`);
+  if (conditions) {
+    console.log(
+      ` Conditions: CAPE ${fmtUnit(conditions.capeMaxMidday, ' J/kg')} | cloud ${fmtUnit(conditions.cloudCoverMeanMidday, '%')} | precip ${fmtUnit(conditions.precipProbabilityMax, '%')} | radiation ${fmtUnit(conditions.shortwaveRadiationSum, ' MJ/m²')}`,
+    );
+  }
 
   const { p10, p25, p50, p75, p90 } = ensemble.maxPercentiles;
   const pctTable = new Table({

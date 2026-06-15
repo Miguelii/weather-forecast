@@ -44,3 +44,35 @@ export class SnapshotWriteError extends Data.TaggedError('SnapshotWriteError')<{
     return this.cause;
   }
 }
+
+export class ForecastLogError extends Data.TaggedError('ForecastLogError')<{ cause: string }> {
+  get message(): string {
+    return this.cause;
+  }
+}
+
+export class CalibrationError extends Data.TaggedError('CalibrationError')<{ cause: string }> {
+  get message(): string {
+    return this.cause;
+  }
+}
+
+export class ClimatologyError extends Data.TaggedError('ClimatologyError')<{ cause: string }> {
+  get message(): string {
+    return this.cause;
+  }
+}
+
+export class ConditionsFetchError extends Data.TaggedError('ConditionsFetchError')<{
+  cause: string;
+}> {
+  get message(): string {
+    return this.cause;
+  }
+}
+
+export class ActualsFetchError extends Data.TaggedError('ActualsFetchError')<{ cause: string }> {
+  get message(): string {
+    return this.cause;
+  }
+}

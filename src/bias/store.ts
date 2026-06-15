@@ -30,10 +30,15 @@ export const loadBias = Effect.fn('loadBias')(function* () {
   });
 });
 
-/** Serialises and writes the full bias store to disk. */
-const saveBias = (data: BiasStore): Effect.Effect<void, BiasStoreError> =>
+/**
+ * Serialises and writes the full bias store to disk.
+ *
+ * @param data - The complete bias store to persist.
+ * @throws BiasStoreError if the file cannot be written.
+ */
+export const saveBias = (data: BiasStore): Effect.Effect<void, BiasStoreError> =>
   Effect.tryPromise({
-    try: () => writeFile(BIAS_PATH, JSON.stringify(data, null, 2)),
+    try: () => writeFile(BIAS_PATH, `${JSON.stringify(data, null, 2)}\n`),
     catch: (err) => new BiasStoreError({ cause: String(err) }),
   });
 
