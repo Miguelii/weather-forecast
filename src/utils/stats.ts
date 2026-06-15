@@ -102,3 +102,89 @@ export function normalCDF(x: number, mu: number, sigma: number): number {
   const z = (x - mu) / (sigma * Math.SQRT2);
   return 0.5 * (1 + erf(z));
 }
+
+// Coefficients for Acklam's rational approximation of the inverse normal CDF.
+const ACKLAM_A = [
+  -3.969683028665376e1, 2.209460984245205e2, -2.759285104469687e2, 1.38357751867269e2,
+  -3.066479806614716e1, 2.506628277459239,
+];
+const ACKLAM_B = [
+  -5.447609879822406e1, 1.615858368580409e2, -1.556989798598866e2, 6.680131188771972e1,
+  -1.328068155288572e1,
+];
+const ACKLAM_C = [
+  -7.784894002430293e-3, -3.223964580411365e-1, -2.400758277161838, -2.549732539343734,
+  4.374664141464968, 2.938163982698783,
+];
+const ACKLAM_D = [7.784695709041462e-3, 3.224671290700398e-1, 2.445134137142996, 3.754408661907416];
+const ACKLAM_P_LOW = 0.02425;
+
+/**
+ * Standard-normal quantile function (probit) — the inverse of the standard normal CDF.
+ *
+ * Uses Peter Acklam's rational approximation (relative error < 1.15 × 10⁻⁹), avoiding a
+ * dependency just to invert the normal. Used by {@link invNormalCDF}.
+ *
+ * @param p - Probability in the open interval (0, 1).
+ * @returns The z-score such that `normalCDF(z, 0, 1) ≈ p`.
+ */
+function probit(p: number): number {
+  if (p <= 0) return -Infinity;
+  if (p >= 1) return Infinity;
+
+  if (p < ACKLAM_P_LOW) {
+    const q = Math.sqrt(-2 * Math.log(p));
+    return (
+      (((((ACKLAM_C[0] * q + ACKLAM_C[1]) * q + ACKLAM_C[2]) * q + ACKLAM_C[3]) * q + ACKLAM_C[4]) *
+        q +
+        ACKLAM_C[5]) /
+      ((((ACKLAM_D[0] * q + ACKLAM_D[1]) * q + ACKLAM_D[2]) * q + ACKLAM_D[3]) * q + 1)
+    );
+  }
+
+  if (p > 1 - ACKLAM_P_LOW) {
+    const q = Math.sqrt(-2 * Math.log(1 - p));
+    return (
+      -(
+        ((((ACKLAM_C[0] * q + ACKLAM_C[1]) * q + ACKLAM_C[2]) * q + ACKLAM_C[3]) * q +
+          ACKLAM_C[4]) *
+          q +
+        ACKLAM_C[5]
+      ) /
+      ((((ACKLAM_D[0] * q + ACKLAM_D[1]) * q + ACKLAM_D[2]) * q + ACKLAM_D[3]) * q + 1)
+    );
+  }
+
+  const q = p - 0.5;
+  const r = q * q;
+  return (
+    ((((((ACKLAM_A[0] * r + ACKLAM_A[1]) * r + ACKLAM_A[2]) * r + ACKLAM_A[3]) * r + ACKLAM_A[4]) *
+      r +
+      ACKLAM_A[5]) *
+      q) /
+    (((((ACKLAM_B[0] * r + ACKLAM_B[1]) * r + ACKLAM_B[2]) * r + ACKLAM_B[3]) * r + ACKLAM_B[4]) *
+      r +
+      1)
+  );
+}
+
+/**
+ * Inverse normal CDF: the value `x` such that `P(X ≤ x) = p` for `X ~ N(mu, sigma²)`.
+ *
+ * Lets the deterministic (normal-fit) path derive percentiles that are consistent with the
+ * same calibrated `sigma` used for the threshold probabilities — instead of reading them off
+ * only 4 model points, which understates the spread.
+ *
+ * @param p - Target probability in (0, 1) (e.g. 0.1, 0.5, 0.9).
+ * @param mu - Mean of the distribution.
+ * @param sigma - Standard deviation of the distribution.
+ * @returns The quantile value; equals `mu` when `sigma` is 0.
+ *
+ * @example
+ * invNormalCDF(0.5, 20, 2) // 20
+ * invNormalCDF(0.9, 20, 2) // ~22.56
+ */
+export function invNormalCDF(p: number, mu: number, sigma: number): number {
+  if (sigma === 0) return mu;
+  return mu + sigma * probit(p);
+}

@@ -1,9 +1,12 @@
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { Effect } from 'effect';
-import type { CorrectedForecast, EnsembleResult, Location } from '#types.js';
+import type { CorrectedForecast, DayConditions, EnsembleResult, Location } from '#types.js';
 import { SnapshotWriteError } from '#types/errors.js';
 import { PREDICTS_DIR, MONTH_NAMES } from '#utils/constants.js';
+
+/** Formats a nullable metric with a unit suffix for the snapshot (e.g. `"45%"` or `"n/a"`). */
+const fmtUnit = (v: number | null, unit: string): string => (v !== null ? `${v}${unit}` : 'n/a');
 
 /**
  * Builds a Markdown snapshot string for one forecast run.
@@ -13,6 +16,7 @@ import { PREDICTS_DIR, MONTH_NAMES } from '#utils/constants.js';
  * @param corrected - Bias-corrected forecasts from all NWP models.
  * @param ensemble - Ensemble statistics computed by the voting system.
  * @param polymarketUrl - The Polymarket event URL this snapshot was compared against.
+ * @param conditions - Summarised atmospheric conditions, or null if unavailable.
  * @returns A Markdown string ready to be appended to the snapshot file.
  */
 function buildSnapshotMarkdown(
@@ -21,6 +25,7 @@ function buildSnapshotMarkdown(
   corrected: CorrectedForecast[],
   ensemble: EnsembleResult,
   polymarketUrl: string,
+  conditions: DayConditions | null,
 ): string {
   const ts = new Date().toISOString();
   const parts: string[] = [];
@@ -52,9 +57,20 @@ function buildSnapshotMarkdown(
 
   // Ensemble summary
   const { p10, p25, p50, p75, p90 } = ensemble.maxPercentiles;
+  const membersNote = ensemble.membersUsed ? ` | Members: ${ensemble.membersUsed}` : '';
   parts.push(
-    `**Ensemble** — Mean: ${ensemble.maxMean}°C | σ: ±${ensemble.maxSpread}°C | Models: ${ensemble.modelsUsed}/${ensemble.modelsUsed + ensemble.modelsFailed}`,
+    `**Ensemble** — Mean: ${ensemble.maxMean}°C | σ: ±${ensemble.maxSpread}°C | Models: ${ensemble.modelsUsed}/${ensemble.modelsUsed + ensemble.modelsFailed}${membersNote}`,
   );
+
+  parts.push('');
+
+  parts.push(`**Regime** — ${ensemble.regime.kind.toUpperCase()}: ${ensemble.regime.reason}`);
+  if (conditions) {
+    parts.push('');
+    parts.push(
+      `**Conditions** — CAPE: ${fmtUnit(conditions.capeMaxMidday, ' J/kg')} | Cloud: ${fmtUnit(conditions.cloudCoverMeanMidday, '%')} | Precip prob: ${fmtUnit(conditions.precipProbabilityMax, '%')} | Radiation: ${fmtUnit(conditions.shortwaveRadiationSum, ' MJ/m²')}`,
+    );
+  }
 
   parts.push('');
 
@@ -106,6 +122,7 @@ function snapshotPath(date: string): string {
  * @param corrected - Bias-corrected forecasts from all NWP models.
  * @param ensemble - Ensemble statistics computed by the voting system.
  * @param polymarketUrl - The Polymarket event URL this snapshot was compared against.
+ * @param conditions - Summarised atmospheric conditions, or null if unavailable.
  * @throws SnapshotWriteError if the file cannot be written.
  */
 export const appendForecastSnapshot = Effect.fn('appendForecastSnapshot')(function* (
@@ -114,9 +131,17 @@ export const appendForecastSnapshot = Effect.fn('appendForecastSnapshot')(functi
   corrected: CorrectedForecast[],
   ensemble: EnsembleResult,
   polymarketUrl: string,
+  conditions: DayConditions | null,
 ) {
   const filePath = snapshotPath(date);
-  const markdown = buildSnapshotMarkdown(location, date, corrected, ensemble, polymarketUrl);
+  const markdown = buildSnapshotMarkdown(
+    location,
+    date,
+    corrected,
+    ensemble,
+    polymarketUrl,
+    conditions,
+  );
 
   yield* Effect.tryPromise({
     try: () => mkdir(PREDICTS_DIR, { recursive: true }),

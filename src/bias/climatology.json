@@ -1,0 +1,22 @@
+{
+  "London": {
+    "monthlyMaxMean": [8, 9, 12, 15, 18, 21, 23, 23, 20, 16, 11, 8],
+    "maxStd": 3.5
+  },
+  "Paris": {
+    "monthlyMaxMean": [7, 9, 13, 16, 20, 23, 25, 25, 21, 16, 11, 8],
+    "maxStd": 4
+  },
+  "Beijing": {
+    "monthlyMaxMean": [2, 5, 12, 20, 26, 30, 31, 30, 26, 19, 10, 4],
+    "maxStd": 3.5
+  },
+  "Shenzhen": {
+    "monthlyMaxMean": [19, 20, 22, 26, 29, 31, 32, 32, 31, 28, 25, 21],
+    "maxStd": 2
+  },
+  "Singapore": {
+    "monthlyMaxMean": [30, 32, 32, 32, 32, 31, 31, 31, 31, 31, 31, 30],
+    "maxStd": 1.2
+  }
+}
