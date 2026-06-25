@@ -46,13 +46,15 @@ src/
 │   ├── display.ts            # Terminal output — model table, ensemble summary, probability bars
 │   ├── geocoding.ts          # City name → lat/lon via Open-Meteo geocoding API (Effect)
 │   ├── runOrExit.ts          # Runs an Effect and exits process on failure
-│   ├── snapshotWriter.ts     # Appends forecast snapshots (incl. Polymarket URL) to predicts/<month>-<day>.md (Effect)
+│   ├── snapshotWriter.ts     # Appends forecast snapshots (incl. Polymarket URL) to forecasts/snapshots/<month>-<day>.md (Effect)
 │   ├── stats.ts              # Pure math: mean, stddev, percentile, normalCDF
 │   └── validateDate.ts       # CLI date validation with warnings
 └── voting/
     └── voting-system.ts      # Ensemble voting: aggregates models into probability output (Effect)
 
-predicts/                     # Daily forecast snapshots — one <month>-<day>.md file per date
+forecasts/                    # Daily forecast outputs (both written by B1)
+├── log.jsonl                 # Structured machine-readable forecast+outcome log (B1→B2→B3 loop)
+└── snapshots/                # Human-readable <month>-<day>.md snapshots — one file per date
 dist/                         # Compiled JS output — gitignored, never edit directly
 ```
 

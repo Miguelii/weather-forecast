@@ -36,8 +36,8 @@ export const CALIBRATION_PATH = resolve(currentDir, '../../src/bias/calibration.
 // Per-city monthly daily-max climate normals — used to flag heat-wave regimes (C2).
 export const CLIMATOLOGY_PATH = resolve(currentDir, '../../src/bias/climatology.json');
 // Structured forecast+outcome log (one JSON object per line) — the training signal for the
-// automated bias/calibration loop (B1/B2/B3). Lives next to the human-readable predicts/.
-export const FORECAST_LOG_PATH = resolve(currentDir, '../../data/forecasts.jsonl');
+// automated bias/calibration loop (B1/B2/B3). Lives next to the human-readable snapshots/.
+export const FORECAST_LOG_PATH = resolve(currentDir, '../../forecasts/log.jsonl');
 
 // ─── Validation ───────────────────────────────────────────────────────────────
 export const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -99,7 +99,7 @@ export const MONTH_NAMES_FULL = [
 
 // ─── Snapshots ────────────────────────────────────────────────────────────────
 // Daily forecast snapshots are written here, one Markdown file per date.
-export const PREDICTS_DIR = resolve(currentDir, '../../predicts');
+export const SNAPSHOTS_DIR = resolve(currentDir, '../../forecasts/snapshots');
 export const MONTH_NAMES = [
   'jan',
   'feb',

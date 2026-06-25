@@ -8,7 +8,7 @@ import { FORECAST_LOG_PATH } from '#utils/constants.js';
 /**
  * Appends one forecast record to the structured JSONL log (B1).
  *
- * Creates the `data/` directory and file on first write. Each call adds a single line so records
+ * Creates the `forecasts/` directory and file on first write. Each call adds a single line so records
  * accumulate without a read-modify-write race (unlike the shared daily snapshot file).
  *
  * @param entry - The forecast record to persist (`observed` starts null, filled later by B2).
@@ -19,7 +19,8 @@ export const appendForecastLog = Effect.fn('appendForecastLog')(function* (
 ) {
   yield* Effect.tryPromise({
     try: () => mkdir(dirname(FORECAST_LOG_PATH), { recursive: true }),
-    catch: (err) => new ForecastLogError({ cause: `Could not create data dir: ${String(err)}` }),
+    catch: (err) =>
+      new ForecastLogError({ cause: `Could not create forecasts dir: ${String(err)}` }),
   });
 
   yield* Effect.tryPromise({
