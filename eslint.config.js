@@ -11,9 +11,7 @@ const __dirname = dirname(__filename);
 const compat = new FlatCompat({ baseDirectory: __dirname });
 
 export default [
-  // Carrega airbnb-base + desliga regras que conflituam com Prettier
   ...compat.extends('airbnb-base', 'prettier'),
-
   {
     files: ['src/**/*.ts'],
     languageOptions: {
@@ -33,24 +31,16 @@ export default [
       },
     },
     rules: {
-      // TypeScript recommended por cima do airbnb-base
       ...tsPlugin.configs.recommended.rules,
-
-      // Ajustes ao airbnb-base para este projecto Node.js + TypeScript
-      'no-console':                'off',   // CLI — console é necessário
-      'no-restricted-syntax':      'off',   // permite for...of
+      'no-console':                'off',
+      'no-restricted-syntax':      'off',
       'no-plusplus':               'off',
       'no-await-in-loop':          'warn',
-
       'func-names': 'off', // off because of effect-ts
       'no-underscore-dangle': 'off', // off because of effect-ts
       'max-classes-per-file': 'off',
-
-      // Extensões obrigatórias nas importações ESM (.js)
       'import/extensions': ['error', 'ignorePackages', { js: 'always', ts: 'never' }],
       'import/prefer-default-export': 'off',
-
-      // TypeScript-specific
       '@typescript-eslint/no-explicit-any':       'error',
       '@typescript-eslint/no-non-null-assertion': 'warn',
     },
